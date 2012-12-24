@@ -1,0 +1,5 @@
+littletsp
+littletspd
+objs/*
+objsd/*
+*.swp
