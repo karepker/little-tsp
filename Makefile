@@ -34,46 +34,25 @@ debug: OBJS_DIR := $(OBJSD_DIR)
 debug: $(EXECUTABLED)
 
 clean:
-	rm -rf $(EXECUTABLER) $(EXECUTABLED) *.o
+	rm -rf $(EXECUTABLER) $(EXECUTABLED) $(OBJSD_DIR)/*.o $(OBJSR_DIR)/*.o
 
 ################################################################################
 # OBJECTS AND BINARIES
 ################################################################################
 
-OBJECTS = $(patsubst $(SRC_DIR)/%.cpp, %.o, $(wildcard $(SRC_DIR)/*.cpp))
+# different objects
+OBJECTSD = $(patsubst $(SRC_DIR)/%.cpp, $(OBJSD_DIR)/%.o, $(wildcard $(SRC_DIR)/*.cpp))
+OBJECTSR = $(patsubst $(SRC_DIR)/%.cpp, $(OBJSR_DIR)/%.o, $(wildcard $(SRC_DIR)/*.cpp))
 
-$(EXECUTABLED) $(EXECUTABLER): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(patsubst %.o, $(OBJS_DIR)/%.o, $(OBJECTS)) -o $@
+INCLUDES = $(wildcard include/*.hpp)
 
-################################################################################
-# INDIVIDUAL RULES
-################################################################################
+# different executables
+$(EXECUTABLED): $(OBJECTSD)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $^ -o $@
 
-main.o: $(SRC_DIR)/main.cpp $(INCLUDE_DIR)/interaction.hpp \
-	$(INCLUDE_DIR)/graph.hpp $(INCLUDE_DIR)/common.hpp
-	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $(OBJS_DIR)/$@
+$(EXECUTABLER): $(OBJECTSR)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $^ -o $@
 
-interaction.o: $(SRC_DIR)/interaction.cpp $(INCLUDE_DIR)/interaction.hpp \
-	$(INCLUDE_DIR)/common.hpp
-	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $(OBJS_DIR)/$@
-
-basicgraph.o: $(SRC_DIR)/basicgraph.cpp $(INCLUDE_DIR)/basicgraph.hpp
-	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $(OBJS_DIR)/$@
-
-graph.o: $(SRC_DIR)/graph.cpp $(INCLUDE_DIR)/graph.hpp \
-	$(INCLUDE_DIR)/matrix.hpp
-	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $(OBJS_DIR)/$@
-
-fasttsp.o: $(SRC_DIR)/fasttsp.cpp $(INCLUDE_DIR)/graph.hpp
-	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $(OBJS_DIR)/$@
-
-opttsp.o: $(SRC_DIR)/opttsp.cpp $(INCLUDE_DIR)/graph.hpp \
-	$(INCLUDE_DIR)/pathinfo.hpp
-	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $(OBJS_DIR)/$@
-
-naivetsp.o: $(SRC_DIR)/naivetsp.cpp $(INCLUDE_DIR)/graph.hpp
-	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $(OBJS_DIR)/$@
-
-pathinfo.o: $(SRC_DIR)/pathinfo.cpp $(INCLUDE_DIR)/pathinfo.hpp \
-	$(INCLUDE_DIR)/basicgraph.hpp
-	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $(OBJS_DIR)/$@
+# individual object rules
+$(OBJSD_DIR)/%.o $(OBJSR_DIR)/%.o: $(SRC_DIR)/%.cpp $(INCLUDES) 	
+	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $@
