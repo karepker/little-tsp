@@ -1,5 +1,5 @@
 // INCLUDES
-// STL
+// Built in
 #include <getopt.h>
 #include <cstdio>
 #include <cstdlib>
@@ -18,7 +18,7 @@ using std::ifstream;
 namespace 
 {
 	const unsigned int NUM_MODES = FASTTSP + 1;
-	const char* MODES[NUM_MODES] = { "MST", "OPTTSP", "FASTTSP", "NAIVETSP" };
+	const char* MODES[NUM_MODES] = { "OPTTSP", "NAIVETSP" };
 }
 
 programmode_t checkMode(const char* optarg)

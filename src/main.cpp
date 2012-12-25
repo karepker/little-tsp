@@ -31,20 +31,8 @@ int main(int argc, char* argv[])
 	Graph g;
 
 	// do the calculations
-	// find the MST
-	if(mode == MST) 
-	{
-		Tree mst = g.makeMST();
-		cout << mst;
-	}
-	// find a potential suboptimal path using heuristics
-	else if(mode == FASTTSP) 	
-	{
-		Path p = g.fastTSP();
-		cout << p;
-	}
 	// find the optimal TSP using the faster algorithm
-	else if(mode == OPTTSP)
+	if(mode == OPTTSP)
 	{
 		Path p = g.optTSP();
 		cout << p;

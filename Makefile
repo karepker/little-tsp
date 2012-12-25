@@ -1,26 +1,28 @@
 ################################################################################
-# COMPILER AND COMPILER FLAGS
-################################################################################
-
-CXX=g++
-CXXFLAGS=-Wall -Werror -std=c++11
-CXXFLAGSD=-g
-CXXFLAGSR=-O3
-
-################################################################################
 # DIRECTORIES
 ################################################################################
 
-SRCDIR = src
-BINDIR = bin
-BINDDIR = bind
-INCLUDEDIR = include
+SRC_DIR = src
+OBJSR_DIR = build/release
+OBJSD_DIR = build/debug
+INCLUDE_DIR = include
+
+################################################################################
+# COMPILER AND COMPILER FLAGS
+################################################################################
+
+CXX = g++
+CXXFLAGS = -Wall -Werror -std=c++11
+CXXFLAGSD = -g
+CPPFLAGS = -I$(INCLUDE_DIR)
+OBJS_DIR =
+CXXFLAGSR = -O3
 
 ################################################################################
 # OBJECTS AND BINARIES
 ################################################################################
 
-OBJECTS = $(patsubst %.cpp, %.o, $(wildcard ${SRCDIR}/*.cpp))
+OBJECTS = main.o basicgraph.o graph.o opttsp.o naivetsp.o pathinfo.o
 EXECUTABLE = littletsp
 EXECUTABLED = littletspd
 
@@ -31,9 +33,11 @@ EXECUTABLED = littletspd
 all: release
 
 release: CXXFLAGS += $(CXXFLAGSR)
+release: OBJS_DIR += $(OBJSR_DIR)
 release: $(EXECUTABLE)
 
 debug: CXXFLAGS += $(CXXFLAGSD)
+debug: OBJS_DIR += $(OBJSD_DIR)
 debug: $(EXECUTABLED)
 
 clean:
@@ -43,30 +47,34 @@ clean:
 # BINARIES
 ################################################################################
 
-$(EXECUTABLE): $(RELEASE_OBJECTS)
+$(EXECUTABLE): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $^ -o $@
 
-$(EXECUTABLED): $(DEBUG_OBJECTS) 
+$(EXECUTABLED): $(OBJECTS) 
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $^ -o $@
 
 ################################################################################
 # OBJECTS
 ################################################################################
 
-main.o: main.cpp interaction.hpp graph.hpp common.hpp
-	$(CXX) -c $(CXXFLAGS) $< -o $@
+main.o: $(SRC_DIR)/main.cpp $(INCLUDE_DIR)/interaction.hpp \
+	$(INCLUDE_DIR)/graph.hpp $(INCLUDE_DIR)/common.hpp
+	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $(OBJS_DIR)/$@
 
-basicgraph.o: basicgraph.cpp basicgraph.hpp
-	$(CXX) -c $(CXXFLAGS) $< -o $@
+basicgraph.o: $(SRC_DIR)/basicgraph.cpp $(INCLUDE_DIR)/basicgraph.hpp
+	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $(OBJS_DIR)/$@
 
-graph.o: graph.cpp graph.hpp matrix.hpp
-	$(CXX) -c $(CXXFLAGS) $< -o $@
+graph.o: $(SRC_DIR)/graph.cpp $(INCLUDE_DIR)/graph.hpp \
+	$(INCLUDE_DIR)/matrix.hpp
+	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $(OBJS_DIR)/$@
 
-opttsp.o: opttsp.cpp graph.hpp pathinfo.hpp
-	$(CXX) -c $(CXXFLAGS) $< -o $@
+opttsp.o: $(SRC_DIR)/opttsp.cpp $(INCLUDE_DIR)/graph.hpp \
+	$(INCLUDE_DIR)/pathinfo.hpp
+	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $(OBJS_DIR)/$@
 
-naivetsp.o: naivetsp.cpp graph.hpp
-	$(CXX) -c $(CXXFLAGS) $< -o $@
+naivetsp.o: $(SRC_DIR)/naivetsp.cpp $(INCLUDE_DIR)/graph.hpp
+	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $(OBJS_DIR)/$@
 
-pathinfo.o: pathinfo.cpp pathinfo.hpp basicgraph.hpp
-	$(CXX) -c $(CXXFLAGS) $< -o $@
+pathinfo.o: $(SRC_DIR)/pathinfo.cpp $(INCLUDE_DIR)/pathinfo.hpp \
+	$(INCLUDE_DIR)/basicgraph.hpp
+	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $(OBJS_DIR)/$@
