@@ -17,23 +17,6 @@ namespace {
 	const unsigned int infinity = numeric_limits<unsigned int>::max();
 }
 
-// information about the useable matrix
-// temporary struct that is used to help build a PathInfo
-struct MatrixInfo
-{
-	// whether the rows are available
-	std::vector<unsigned int> rowReds;
-	std::vector<unsigned int> colReds;
-
-	// whether the columns are available
-	std::vector<bool> rowAvail;
-	std::vector<bool> colAvail;
-
-	MatrixInfo(unsigned int size) : rowReds(size, 0), colReds(size, 0),
-		rowAvail(size, true), colAvail(size, true) {};
-
-};
-
 // these methods will fail if there's no min
 unsigned int CostMatrix::reduceRow(unsigned int i, const PathInfo& p,
 	MatrixInfo& info) const

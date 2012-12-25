@@ -17,7 +17,7 @@ using std::ifstream;
 
 namespace 
 {
-	const unsigned int NUM_MODES = FASTTSP + 1;
+	const unsigned int NUM_MODES = NAIVETSP + 1;
 	const char* MODES[NUM_MODES] = { "OPTTSP", "NAIVETSP" };
 }
 

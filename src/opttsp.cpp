@@ -14,7 +14,7 @@ namespace
 	const unsigned int infinity = numeric_limits<unsigned int>::max();
 }
 
-bool evaluateNode(struct CostMatrix& costs, PathInfo& node, 
+bool evaluateNode(const struct CostMatrix& costs, PathInfo& node, 
 	PathInfo& smallest, unsigned int upperBound) 
 {
 	try
@@ -39,7 +39,7 @@ bool evaluateNode(struct CostMatrix& costs, PathInfo& node,
 struct Path Graph::optTSP()
 {
 	// run fasttsp to get a upper bound on path
-	struct Path fast = this->fastTSP();
+	struct Path fast = this->fastTSP(false);
 	return this->optTSP(fast);
 }
 
@@ -62,7 +62,7 @@ struct Path Graph::optTSP(Path& fast)
 	}
 
 	// reduce the adjmat into a cost matrix, get lower bound
-	const CostMatrix costs(this->adjMat);
+	const struct CostMatrix costs(this->adjMat);
 	PathInfo root(this->adjMat);
 
 	// set up for the branching and bounding

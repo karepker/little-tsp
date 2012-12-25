@@ -26,6 +26,7 @@ public:
 
 	// TSP Methods
 	struct Path naiveTSP(); // for testing
+	struct Path fastTSP(bool useOpt); 
 	struct Path optTSP();
 	struct Path optTSP(struct Path& fast);
 

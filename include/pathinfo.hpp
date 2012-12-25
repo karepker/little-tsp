@@ -73,6 +73,22 @@ public:
 	friend std::ostream& operator<<(std::ostream& os, const PathInfo& p);
 };
 
+// information about the useable matrix
+// temporary struct that is used to help build a PathInfo
+struct MatrixInfo
+{
+	// whether the rows are available
+	std::vector<unsigned int> rowReds;
+	std::vector<unsigned int> colReds;
+
+	// whether the columns are available
+	std::vector<bool> rowAvail;
+	std::vector<bool> colAvail;
+
+	MatrixInfo(unsigned int size) : rowReds(size, 0), colReds(size, 0),
+		rowAvail(size, true), colAvail(size, true) {};
+
+};
 
 // CostMatrix doesn't changed, it is used to manipulate PathInfos
 class CostMatrix
