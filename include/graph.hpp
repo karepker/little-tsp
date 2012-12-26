@@ -1,4 +1,4 @@
-#ifndef __GRAPH___
+#ifndef __GRAPH__
 #define __GRAPH__
 
 // INCLUDES

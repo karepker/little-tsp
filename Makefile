@@ -46,7 +46,7 @@ OBJECTSR = $(patsubst $(SRC_DIR)/%.cpp, $(OBJSR_DIR)/%.o, $(wildcard $(SRC_DIR)/
 
 INCLUDES = $(wildcard include/*.hpp)
 
-# different executables
+# different executables for different targets
 $(EXECUTABLED): $(OBJECTSD)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $^ -o $@
 

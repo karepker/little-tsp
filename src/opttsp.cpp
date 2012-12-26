@@ -14,14 +14,16 @@ namespace
 	const unsigned int infinity = numeric_limits<unsigned int>::max();
 }
 
-bool evaluateNode(const struct CostMatrix& costs, PathInfo& node, 
+// evaluate a node by calculating its next Edge and lower bound
+// return true if the lower bound is less than the smallest path length
+bool evaluateNode(const struct AdjMat& costs, PathInfo& node, 
 	PathInfo& smallest, unsigned int upperBound) 
 {
 	try
 	{
 		// evaluate the node, add it to the list only if its 
 		// lower bound is strictly less than the upper bound
-		costs.calcLBAndNextEdge(node);
+		node.calcLBAndNextEdge(costs);
 		return node.getLowerBound() < upperBound;
 	}
 
@@ -61,8 +63,7 @@ struct Path Graph::optTSP(Path& fast)
 		return one;
 	}
 
-	// reduce the adjmat into a cost matrix, get lower bound
-	const struct CostMatrix costs(this->adjMat);
+	// create the first node from the adjacency "cost" matrix
 	PathInfo root(this->adjMat);
 
 	// set up for the branching and bounding
@@ -70,7 +71,7 @@ struct Path Graph::optTSP(Path& fast)
 	PathInfo smallest;
 
 	// add the first node
-	if(evaluateNode(costs, root, smallest, fast.length))
+	if(evaluateNode(this->adjMat, root, smallest, fast.length))
 	{
 		nodes.push(root);
 	}
@@ -87,26 +88,26 @@ struct Path Graph::optTSP(Path& fast)
 		nodes.pop();
 
 		// two branches:
-		// 1. Excluding the highest penalty, lowest cost edge
+		// 1. Exclude the highest penalty, lowest cost edge
 		// (if excluding it doesn't create a disconnected graph)
 		if(root.getBothBranches())
 		{
 			PathInfo exclude(root, root.getNextEdge(), false);
-			if(evaluateNode(costs, exclude, smallest, upperBound))
+			if(evaluateNode(this->adjMat, exclude, smallest, upperBound))
 			{
 				nodes.push(exclude);
 			}
 		}
 
-		// 2. Including the highest penalty, lowest cost edge
+		// 2. Include the highest penalty, lowest cost edge
 		PathInfo include(root, root.getNextEdge(), true);
-		if(evaluateNode(costs, include, smallest, upperBound))
+		if(evaluateNode(this->adjMat, include, smallest, upperBound))
 		{
 			nodes.push(include);
 		}
 	}
 	
-	// return either fast or smallest, whichever has a smaller length
+	// return the shortest path
 	return smallest.getLowerBound() < fast.length ? 
-		costs.getTSPPath(smallest) : fast;
+		smallest.getTSPPath(this->adjMat) : fast;
 }

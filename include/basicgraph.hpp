@@ -14,7 +14,8 @@ struct AdjMat
 	unsigned int size;
 
 	// operators for getting costs
-	const unsigned int operator()(unsigned int row, unsigned int col) const
+	const unsigned int operator()(unsigned int row, 
+		unsigned int col) const
 	{ 
 		return abs(entries[row].first - entries[col].first) + 
 				abs(entries[row].second - entries[col].second);
@@ -24,7 +25,7 @@ struct AdjMat
 		return abs(entries[row].first - entries[col].first) + 
 				abs(entries[row].second - entries[col].second);
 	}
-
+	
 	// constructors
 	AdjMat(std::vector<std::pair<unsigned int, unsigned int> > e) :
 		entries(e), size(entries.size()) {};

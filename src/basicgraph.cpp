@@ -5,6 +5,7 @@
 using std::ostream;
 using std::endl;
 
+
 ostream& operator<<(ostream& os, const struct Path& p)
 {
 	// print the size

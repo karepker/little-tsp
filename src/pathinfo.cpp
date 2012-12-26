@@ -11,28 +11,35 @@ using std::pair;
 using std::deque;
 using std::numeric_limits;
 using std::max_element;
+using std::sort;
 using std::ostream;
 
 namespace {
 	const unsigned int infinity = numeric_limits<unsigned int>::max();
 }
 
+struct EdgeComp
+{
+	bool operator()(const Edge& first, const Edge& second)
+	{ return first.first < second.first; };
+};
+
 // these methods will fail if there's no min
-unsigned int CostMatrix::reduceRow(unsigned int i, const PathInfo& p,
-	MatrixInfo& info) const
+unsigned int MatrixInfo::reduceRow(unsigned int i, 
+	const struct AdjMat& c,	const struct PathInfo& p) 
 {
 	unsigned int smallestElt = 0;
 
 	// find the smallest element in the row
-	if(info.rowAvail[i])
+	if(this->rowAvail[i])
 	{
 		smallestElt = infinity;
-		for(unsigned int j = 0; j < this->size(); ++j)
+		for(unsigned int j = 0; j < c.size; ++j)
 		{
-			if(info.colAvail[j] && !p.isInfinite(i, j))
+			if(this->colAvail[j] && !p.isInfinite(i, j))
 			{
-				unsigned int current = this->entries(i, j) -
-					info.rowReds[i] - info.colReds[j];
+				unsigned int current = c(i, j) -
+					this->rowReds[i] - this->colReds[j];
 				if(current < smallestElt)
 				{
 					smallestElt = current;
@@ -42,26 +49,26 @@ unsigned int CostMatrix::reduceRow(unsigned int i, const PathInfo& p,
 	}
 
 	// reduce each element in the row by the smallest elt
-	info.rowReds[i] += smallestElt;
+	this->rowReds[i] += smallestElt;
 	return smallestElt;
 }
 
 // these methods will fail if there's no min
-unsigned int CostMatrix::reduceCol(unsigned int j, const PathInfo& p, 
-	MatrixInfo& info) const
+unsigned int MatrixInfo::reduceCol(unsigned int j, 
+	const struct AdjMat& c, const struct PathInfo& p)
 {
 	unsigned int smallestElt = 0;
 
 	// find the smallest element in the row
-	if(info.colAvail[j])
+	if(this->colAvail[j])
 	{
 		smallestElt = infinity;
-		for(unsigned int i = 0; i < this->size(); ++i)
+		for(unsigned int i = 0; i < c.size; ++i)
 		{
-			if(info.rowAvail[i] && !p.isInfinite(i, j))
+			if(this->rowAvail[i] && !p.isInfinite(i, j))
 			{
-				unsigned int current = this->entries(i, j) - 
-					info.rowReds[i] - info.colReds[i];
+				unsigned int current = c(i, j) - 
+					this->rowReds[i] - this->colReds[i];
 				if(current < smallestElt)
 				{
 					smallestElt = current;
@@ -71,8 +78,29 @@ unsigned int CostMatrix::reduceCol(unsigned int j, const PathInfo& p,
 	}
 
 	// reduce each element in the row by the smallest elt
-	info.colReds[j] +=  smallestElt;
+	this->colReds[j] += smallestElt;
 	return smallestElt;
+}
+
+unsigned int MatrixInfo::reduceMatrix(const struct AdjMat& c,
+	const struct PathInfo& p)
+{
+	unsigned int dec = 0;
+
+	// reduce the rows
+	for(unsigned int i = 0; i < c.size; ++i)
+	{
+		dec += this->reduceRow(i, c, p);
+	}
+
+	// reduce the columns
+	for(unsigned int j = 0; j < c.size; ++j)
+	{
+		dec += this->reduceCol(j, c, p);
+	}
+
+	// return the total reduction
+	return dec;
 }
 
 // constructor for the "root" PathInfo
@@ -101,8 +129,6 @@ PathInfo::PathInfo(const PathInfo& old, Edge e, bool inc) :
 }
 
 PathInfo::PathInfo() : bothBranches(true), lowerBound(infinity) {};
-
-
 
 void PathInfo::addInclude(const Edge& e)
 {
@@ -146,14 +172,16 @@ void PathInfo::addExclude(const Edge& e)
 	this->setInfinite(e.first, e.second);
 }
 
-void CostMatrix::setAvailAndLB(PathInfo& p, struct MatrixInfo& info) const
+void PathInfo::setAvailAndLB(const struct AdjMat& c, 
+	struct MatrixInfo& info) 
 {
 	// reset lower bound
-	p.resetLowerBound();
+	this->lowerBound = 0;
+
 	// start its calculation using the cost of the includes
-	for(const Edge e : p.getInclude())
+	for(const Edge& e : this->include)
 	{
-		p.incLowerBound(this->entries(e.first, e.second));
+		this->lowerBound += c(e.first, e.second);
 		info.rowAvail[e.first] = false;
 		info.colAvail[e.second] = false;
 	}
@@ -161,46 +189,31 @@ void CostMatrix::setAvailAndLB(PathInfo& p, struct MatrixInfo& info) const
 
 // build the TSP path once it exists
 // this method will infinite loop if there is not a full path
-struct Path CostMatrix::getTSPPath(const PathInfo& p) const
+struct Path PathInfo::getTSPPath(const AdjMat& c) const
 {
+	// create the solution path
 	Path solution;
-	solution.vertices.reserve(p.getInclude().size());
+	solution.vertices.reserve(this->include.size());
 	solution.length = 0;
+
+	// to help find the path
+	unsigned int pastVertex = 0;
 	unsigned int vertex = 0;
-	// look for the first vertex
-	for(const Edge& e : p.getInclude())
-	{
-		if(e.first == vertex)
-		{
-			solution.vertices.push_back(e.first);
-			vertex = e.second;
-			break;
-		}
-	}
 
-	// look for the rest of the path
-	while(true)
+	// sort the edges and then find the path through them
+	vector<Edge> edges = this->include;
+	sort(edges.begin(), edges.end(), EdgeComp());
+	for(unsigned int i = 0; i <= edges.size(); ++i)
 	{
-		for(const Edge& e : p.getInclude())
-		{
-			if(e.first == vertex)
-			{
-				solution.vertices.push_back(e.first);
-				vertex = e.second;
-				if(vertex == 0)
-				{
-					break;
-				}
-			}
-		}
-	}
+		// push the next vertex on to the path
+		solution.vertices.push_back(vertex);
+		vertex = edges[vertex].second;
 
-	// calculate the length of the path
-	for(unsigned int i = 0; i < solution.vertices.size(); ++i)
-	{
-		solution.length += this->entries(solution.vertices[i], 
-			solution.vertices[(i + 1) % solution.vertices.size()]);
+		// incremement the length of the path
+		solution.length += c(pastVertex, vertex);
+		pastVertex = vertex;
 	}
+	solution.length += c(vertex, 0);
 
 	return solution;
 }
@@ -216,39 +229,29 @@ ostream& operator<<(ostream& os, const PathInfo& p)
 	return os;
 }
 
-void CostMatrix::calcLBAndNextEdge(PathInfo& p) const
+void PathInfo::calcLBAndNextEdge(const AdjMat& c) 
 {
 	// information about the useable matrix
-	struct MatrixInfo info(this->entries.size);
+	struct MatrixInfo info(c.size);
 
 	// calculate the initial LB from edges already included
 	// also, set any edges that would create a subtour as infinite
-	this->setAvailAndLB(p, info);
+	this->setAvailAndLB(c, info);
 
-	// reduce the matrix
-	for(unsigned int i = 0; i < this->size(); ++i)
-	{
-		unsigned int dec = this->reduceRow(i, p, info);
-		p.incLowerBound(dec);
-	}
-
-	for(unsigned int j = 0; j < this->size(); ++j)
-	{
-		unsigned int dec = this->reduceCol(j, p, info);
-		p.incLowerBound(dec);
-	}
+	// reduce the matrix, increment the lower bound from the reduction
+	this->lowerBound += info.reduceMatrix(c, *this);
 
 	// find all the zeros in the matrix
 	vector<Edge> zeros;
-	for(unsigned int i = 0; i < this->size(); ++i)
+	for(unsigned int i = 0; i < c.size; ++i)
 	{
 		if(info.rowAvail[i])
 		{
-			for(unsigned int j = 0; j < this->size(); ++j)
+			for(unsigned int j = 0; j < c.size; ++j)
 			{
-				if(info.colAvail[j] && !p.isInfinite(i, j))
+				if(info.colAvail[j] && !this->isInfinite(i, j))
 				{
-					if(this->entries(i, j) - info.rowReds[i] - 
+					if(c(i, j) - info.rowReds[i] - 
 						info.colReds[j] == 0)
 					{
 						zeros.push_back({ i, j });
@@ -262,7 +265,7 @@ void CostMatrix::calcLBAndNextEdge(PathInfo& p) const
 	// get a penalty associated with each zero
 	vector<unsigned int> penalties(zeros.size());
 	unsigned int counter = 0;
-	for(Edge zero : zeros)
+	for(const Edge zero : zeros)
 	{
 		bool foundMinCol = false;
 		bool foundMinRow = false;
@@ -270,51 +273,53 @@ void CostMatrix::calcLBAndNextEdge(PathInfo& p) const
 		unsigned int minRow = infinity;
 
 		// check for largest distance in row
-		for(unsigned int i = 0; i < this->size(); ++i)
+		for(unsigned int i = 0; i < c.size; ++i)
 		{
 			// INVARIANT: column is always available
-			if(info.rowAvail[i] && !p.isInfinite(i, zero.second) && 
-				i != zero.first && this->entries(i, zero.second) - 
+			if(info.rowAvail[i] && 
+				!this->isInfinite(i, zero.second) && 
+				i != zero.first && c(i, zero.second) - 
 				info.rowReds[i] - info.colReds[zero.second] < minRow)
 			{
-				minRow = this->entries(i, zero.second) - info.rowReds[i] - 
+				minRow = c(i, zero.second) - info.rowReds[i] - 
 					info.colReds[zero.second];
 				foundMinRow = true;
 			}
 		}
 
 		// check largest distance in col
-		for(unsigned int j = 0; j < this->size(); ++j)
+		for(unsigned int j = 0; j < c.size; ++j)
 		{
 			// INVARIANT: row is always available
-			if(info.colAvail[j] && !p.isInfinite(zero.first, j) && 
-				zero.second != j && this->entries(zero.first, j) - 
+			if(info.colAvail[j] && 
+				!this-isInfinite(zero.first, j) && 
+				zero.second != j && c(zero.first, j) - 
 				info.rowReds[zero.first] - info.colReds[j] < minCol)
 			{
-				minCol = this->entries(zero.first, j) - info.rowReds[zero.first] - 
+				minCol = c(zero.first, j) - info.rowReds[zero.first] -
 					info.colReds[j];
 				foundMinCol = true;
 			}
 		}
 
-		// base case
-		if(this->size() - p.getInclude().size() == 2)
+		// 3 cases
+		// 1. base case
+		if(c.size - this->include.size() == 2)
 		{
 			penalties[counter++] = infinity;
 			break;
 		}
 
-		// when branching to another exclude creates a
-		// disconnected graph
+		// 2. case when excluding the node creates a disconnected graph
 		else if(foundMinCol != foundMinRow && 
-			this->size() - p.getInclude().size() != 2)
+			c.size - this->include.size() != 2)
 		{
 			// we must choose this edge and cannot branch
-			p.setNextEdge(zero);
-			p.setBothBranches();
+			this->next = zero;
+			this->bothBranches = false;
 			return;
 		}
-		// normal case
+		// 3. normal case, there is both an include and exclude branch
 		else
 		{
 			penalties[counter++] = minRow + minCol;
@@ -325,10 +330,10 @@ void CostMatrix::calcLBAndNextEdge(PathInfo& p) const
 	auto maxPenaltyIt = max_element(penalties.begin(), penalties.end());
 	unsigned int index = maxPenaltyIt - penalties.begin();
 
-	// base case: 2 x 2 matrix
-	if(this->size() - p.getInclude().size() == 2)
+	// handle the base case
+	if(c.size - this->include.size() == 2)
 	{
-		p.addInclude(zeros[index]);
+		this->addInclude(zeros[index]);
 		info.rowAvail[zeros[index].first] = false;
 		info.colAvail[zeros[index].second] = false;
 		unsigned int row = 0;
@@ -351,14 +356,14 @@ void CostMatrix::calcLBAndNextEdge(PathInfo& p) const
 				break;
 			}
 		}
-		p.addInclude({ row, col });
+		this->addInclude({ row, col });
 		// recalculate LB, the length of the TSP tour
-		this->setAvailAndLB(p, info);
+		this->setAvailAndLB(c, info);
 		throw NoNextEdge();
 	}
 
 	// for any other case, set the next edge to branch on
 	// and set the flag that calculations have been completed
-	p.setNextEdge(zeros[index]);
-	p.setFoundLBAndEdge();
+	this->next = zeros[index];
+	this->foundLBAndEdge = true;
 } 

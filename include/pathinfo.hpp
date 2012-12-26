@@ -52,22 +52,23 @@ public:
 	void setInfinite(unsigned int i, unsigned int j) 
 		{ this->infinite.setEntry(i, j, true); }; 
 
-	// functions called by getLBAndNextEdge
-	void resetLowerBound() { this->lowerBound = 0; };
-	void incLowerBound(unsigned int inc) { this->lowerBound += inc; };
-	void setFoundLBAndEdge() { this->foundLBAndEdge = true; };
-	void setNextEdge(Edge e) { this->next = e; };
-	void setBothBranches() { this->bothBranches = false; };
-
 	// getters
 	const std::vector<Edge> getInclude() 
 		const { return this->include; };
 	const Matrix<bool> getInfinite() const { return this->infinite; };
-	const unsigned int getLowerBound() const { return this->lowerBound; }; 
-	unsigned int getSize() const { return this->infinite.size; };
+	const unsigned int getLowerBound() const 
+		{ return this->lowerBound; }; 
 	bool getFoundLBAndEdge() const { return this->foundLBAndEdge; };
+
+	// branching methods
 	bool getBothBranches() const { return this->bothBranches; };
 	Edge getNextEdge() const { return this->next; };
+	
+	// branch determination methods
+	void setAvailAndLB(const struct AdjMat& c, 
+		struct MatrixInfo& info);
+	void calcLBAndNextEdge(const struct AdjMat& c);
+	struct Path getTSPPath(const AdjMat& c) const;
 	
 	// ostream operator
 	friend std::ostream& operator<<(std::ostream& os, const PathInfo& p);
@@ -88,33 +89,13 @@ struct MatrixInfo
 	MatrixInfo(unsigned int size) : rowReds(size, 0), colReds(size, 0),
 		rowAvail(size, true), colAvail(size, true) {};
 
-};
-
-// CostMatrix doesn't changed, it is used to manipulate PathInfos
-class CostMatrix
-{
-	const AdjMat entries;
-
-	// reduce rows and columns
-	// this will not modify the matrix, rather, the PathInfo
-	unsigned int reduceRow(unsigned int i, const PathInfo& p, 
-		MatrixInfo& info) const;
-	unsigned int reduceCol(unsigned int j, const PathInfo& p, 
-		MatrixInfo& info) const;
-
-	void setAvailAndLB(PathInfo& p, struct MatrixInfo& info) const;
-
-public:
-	// get the next edge and the penalty for not choosing that edge
-	// matrix must be reduced
-	void calcLBAndNextEdge(PathInfo& p) const;
-	CostMatrix(const AdjMat e) : entries(e) {};
-
-	// getters
-	unsigned int size() const { return this->entries.size; };
-
-	// once there is a full TSP, get the path
-	struct Path getTSPPath(const PathInfo& p) const;
+	// reduce the matrix by storing information about reduction
+	unsigned int reduceRow(unsigned int i, 
+		const struct AdjMat& c,	const struct PathInfo& p);
+	unsigned int reduceCol(unsigned int j, 
+		const struct AdjMat& c, const struct PathInfo& p);
+	unsigned int reduceMatrix(const struct AdjMat& c,
+		const struct PathInfo& p);
 };
 
 #endif // __PATHINFO__
