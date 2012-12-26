@@ -203,7 +203,7 @@ struct Path PathInfo::getTSPPath(const AdjMat& c) const
 	// sort the edges and then find the path through them
 	vector<Edge> edges = this->include;
 	sort(edges.begin(), edges.end(), EdgeComp());
-	for(unsigned int i = 0; i <= edges.size(); ++i)
+	for(unsigned int i = 0; i < edges.size(); ++i)
 	{
 		// push the next vertex on to the path
 		solution.vertices.push_back(vertex);
@@ -213,7 +213,8 @@ struct Path PathInfo::getTSPPath(const AdjMat& c) const
 		solution.length += c(pastVertex, vertex);
 		pastVertex = vertex;
 	}
-	solution.length += c(vertex, 0);
+	// finish the path, INVARIANT: vertex should always be 0
+	solution.length += c(pastVertex, vertex);
 
 	return solution;
 }
