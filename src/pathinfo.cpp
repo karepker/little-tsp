@@ -159,14 +159,11 @@ void PathInfo::addInclude(const Edge& e)
 
 	// make the ends of the longest subtour infinite
 	this->setInfinite(subtour.back(), subtour.front());
-	this->exclude.push_back({ subtour.back() * 100, 
-		subtour.front() * 100 });
 }
 
 void PathInfo::addExclude(const Edge& e)
 {
 	this->setInfinite(e.first, e.second);
-	this->exclude.push_back({ e.first * 1000, e.second * 1000 });
 }
 
 void PathInfo::setAvailAndLB(const struct AdjMat& c, 
@@ -220,12 +217,6 @@ ostream& operator<<(ostream& os, const PathInfo& p)
 {
 	os << "{ ";
 	for(const Edge& e : p.include)
-	{
-		os << "(" << e.first << " " << e.second << ") ";
-	}
-	os << " } ";
-	os << " { ";
-	for(const Edge& e : p.exclude)
 	{
 		os << "(" << e.first << " " << e.second << ") ";
 	}
