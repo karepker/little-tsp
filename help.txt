@@ -1,0 +1,15 @@
+NAME
+	littletsp - An implemenation of a branch and bound TSP algorithm
+SYNOPSIS
+	littletsp --mode|-m MODE [OPTION]...
+DESCRIPTION
+	littletsp takes map input from standard input that describes the positions of all
+	vertices in a graph. littletsp will solve the Traveling Salesman Problem by 
+	generating a cycle that describes how to retrieve all cakes while traveling the 
+	minimum possible Manhattan distance. 
+OPTIONS
+	-h, --help
+		Print this help screen and exit.
+	-m, --mode MODE
+		Optional flag that states run mode. MODE must be one of OPTTSP or NAIVETSP.
+		Default is OPTTSP
