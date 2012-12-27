@@ -8,7 +8,7 @@ NUM_CASES=10
 
 # Remove the old test cases, create new ones
 rm test/generated-case-*.txt
-./test/generate.py -p 8 10 -s 100 -n $NUM_CASES 
+./test/generate.py -p 3 5 -s 100 -n $NUM_CASES 
 
 # run the comparisons
 for ((i = 0; i < $(($NUM_CASES)); i++))

@@ -68,7 +68,7 @@ unsigned int MatrixInfo::reduceCol(unsigned int j,
 			if(this->rowAvail[i] && !p.isInfinite(i, j))
 			{
 				unsigned int current = c(i, j) - 
-					this->rowReds[i] - this->colReds[i];
+					this->rowReds[i] - this->colReds[j];
 				if(current < smallestElt)
 				{
 					smallestElt = current;
@@ -116,14 +116,8 @@ PathInfo::PathInfo(const AdjMat& costs) :
 	}
 }
 
-PathInfo::PathInfo(const PathInfo& old) :
-	include(old.getInclude()), infinite(old.getInfinite()), 
-	next(old.getNextEdge()), foundLBAndEdge(old.getFoundLBAndEdge()), 
-	bothBranches(old.getBothBranches()), lowerBound(old.getLowerBound()) {}
-
 PathInfo::PathInfo(const PathInfo& old, Edge e, bool inc) :
-	include(old.getInclude()), infinite(old.getInfinite()),
-	bothBranches(old.getBothBranches()), lowerBound(old.getLowerBound()) 
+	PathInfo(old)
 {
 	inc ? this->addInclude(e) : this->addExclude(e);
 }
@@ -165,11 +159,14 @@ void PathInfo::addInclude(const Edge& e)
 
 	// make the ends of the longest subtour infinite
 	this->setInfinite(subtour.back(), subtour.front());
+	this->exclude.push_back({ subtour.back() * 100, 
+		subtour.front() * 100 });
 }
 
 void PathInfo::addExclude(const Edge& e)
 {
 	this->setInfinite(e.first, e.second);
+	this->exclude.push_back({ e.first * 1000, e.second * 1000 });
 }
 
 void PathInfo::setAvailAndLB(const struct AdjMat& c, 
@@ -222,7 +219,13 @@ struct Path PathInfo::getTSPPath(const AdjMat& c) const
 ostream& operator<<(ostream& os, const PathInfo& p)
 {
 	os << "{ ";
-	for(const Edge& e : p.getInclude())
+	for(const Edge& e : p.include)
+	{
+		os << "(" << e.first << " " << e.second << ") ";
+	}
+	os << " } ";
+	os << " { ";
+	for(const Edge& e : p.exclude)
 	{
 		os << "(" << e.first << " " << e.second << ") ";
 	}
@@ -293,7 +296,7 @@ void PathInfo::calcLBAndNextEdge(const AdjMat& c)
 		{
 			// INVARIANT: row is always available
 			if(info.colAvail[j] && 
-				!this-isInfinite(zero.first, j) && 
+				!this->isInfinite(zero.first, j) && 
 				zero.second != j && c(zero.first, j) - 
 				info.rowReds[zero.first] - info.colReds[j] < minCol)
 			{

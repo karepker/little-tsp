@@ -19,6 +19,8 @@ class PathInfo
 {
 	// edges that are being included and excluded
 	std::vector<Edge> include;
+	std::vector<Edge> exclude;
+
 	// bit matrix corresponding to the matrix cells set to infinite
 	Matrix<bool> infinite; 
 
@@ -36,7 +38,6 @@ public:
 	PathInfo();
 	PathInfo(const AdjMat& costs);
 	// copy constructor
-	PathInfo(const PathInfo& old);
 	PathInfo(const PathInfo& old, Edge e, bool inc);
 
 	// Important methods
@@ -55,6 +56,8 @@ public:
 	// getters
 	const std::vector<Edge> getInclude() 
 		const { return this->include; };
+	const std::vector<Edge> getExclude() 
+		const { return this->exclude; };
 	const Matrix<bool> getInfinite() const { return this->infinite; };
 	const unsigned int getLowerBound() const 
 		{ return this->lowerBound; }; 
