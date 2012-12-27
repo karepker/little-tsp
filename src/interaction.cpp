@@ -19,6 +19,7 @@ namespace
 {
 	const unsigned int NUM_MODES = NAIVETSP + 1;
 	const char* MODES[NUM_MODES] = { "OPTTSP", "NAIVETSP" };
+	const programmode_t DEFAULT_MODE = OPTTSP;
 }
 
 programmode_t checkMode(const char* optarg)
@@ -101,10 +102,10 @@ programmode_t parseArgs(int argc, char* argv[])
 		}
 	}
 
-	// ensure that mode was set
+	// set mode to default if flag no given
 	if(mode == NOT_SET)
 	{
-		throw MessageError("Mode flag not specified, -m/--mode is required\n");
+		mode = DEFAULT_MODE;
 	}
 	return mode;
 }
