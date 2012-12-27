@@ -33,4 +33,14 @@ would be the output for the input file given above.
 After cloning the repository into a local directory, `cd` into that directory and type `./configure.sh; make`. To run the program, type `littletsp < input.txt` (equivalently `littletsp -m OPTTSP < input.txt`), where `input.txt` is the path to a valid input file as described above. This program also provides a brute force algorithm for solving the TSP that conducts a simple depth first search and returns the minimum path. This may be used by typing `littletsp -m NAIVETSP`. Also, typing `littletsp --help` will print a help message displaying options for running.
 
 ## Modification
-It would probably be most easy and useful to modify the input format and edges. To modify the input format, see the constructor for `Graph` in `src/graph.cpp`. To modify the way the weights for edges are calculated, or the way the adjacency matrix is stored, see `include/basicgraph.hpp` and `src/basicgraph.cpp`. To modify the initial heuristic used for an upper bound, look in `src/fasttsp.cpp`. The branch and bound algorithm itself can be found mostly in the `include/pathinfo.hpp`, `src/pathinfo.cpp`, and `src/opttsp.cpp` files. The commands `make debug` (builds `littletspd`, which has debugging flags) and `make clean` (cleans .o files and binary files from the directory) may be useful for development purposes.
+It would probably be most easy and useful to modify the input format and edges. To modify the input format, see the constructor for `Graph` in `src/graph.cpp`. To modify the way the weights for edges are calculated, or the way the adjacency matrix is stored, see `include/basicgraph.hpp` and `src/basicgraph.cpp`. To modify the initial heuristic used for an upper bound, look in `src/fasttsp.cpp`. The branch and bound algorithm itself can be found mostly in the `include/pathinfo.hpp`, `src/pathinfo.cpp`, and `src/opttsp.cpp` files. The commands `make debug` (builds `littletspd`, which has debugging flags) and `make clean` (cleans `.o` files, `littletsp`, and `littletspd` from the directory) may be useful for development purposes.
+
+## License
+little-tsp, an implementation of the branch and bound algorithm for the TSP as described in a paper by Little et al in 1963
+Copyright (C) 2012 Kar Epker
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
