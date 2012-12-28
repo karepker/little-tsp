@@ -73,4 +73,5 @@ for write_num in range(start_case, start_case + args.num):
         point2 = rand.randint(0, args.size)
         case_file.write(str(point1) + " " + str(point2) + os.linesep)
 
-print("Finished writing all test cases")
+if not args.quiet:
+    print("Finished writing all test cases")
