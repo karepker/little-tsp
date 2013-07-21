@@ -7,6 +7,9 @@
 #include <utility>
 #include <iostream>
 
+// A simulation of an adjacency matrix for Manhattan distances
+// coordinates are actually just stored in a vector
+// this is because distances are symmetric and can be computed on the fly
 struct AdjMat
 {
 	// a vector of coordinates
@@ -14,6 +17,8 @@ struct AdjMat
 	unsigned int size;
 
 	// operators for getting costs
+	// note: "row" and "column" are just for familiarity
+	// distances are computed on the fly, so they just represent indices
 	const unsigned int operator()(unsigned int row, 
 		unsigned int col) const
 	{ 
@@ -33,9 +38,12 @@ struct AdjMat
 	AdjMat() : size(0) {};
 };
 
+// a struct for representing a path through a set of vertices
 struct Path
 {
+	// the order of vertices through which to travel
 	std::vector<unsigned int> vertices;
+	// the length of the path through that particular order
 	unsigned int length;
 
 	// operators
