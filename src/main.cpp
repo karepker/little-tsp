@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Kar Epker's EECS 281 Project 3
+// Kar Epker's Implementation of Little et. al. TSP Algorithm
 ////////////////////////////////////////////////////////////////////////////////
 
 // INCLUDES
@@ -14,7 +14,6 @@ using std::endl;
 
 int main(int argc, char* argv[])
 {
-
 	// get mode
 	programmode_t mode;
 	try
@@ -24,7 +23,7 @@ int main(int argc, char* argv[])
 	catch(MessageError me)
 	{
 		cout << me;
-		return 0;
+		return 1;
 	}
 
 	// construct the Graph

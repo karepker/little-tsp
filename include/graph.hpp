@@ -15,7 +15,7 @@ class Graph
 	struct Path naiveTSPHelper(struct Path soFar, std::vector<bool> visited);
 
 public:
-	Graph(std::istream& input = std::cin);
+	explicit Graph(std::istream& input = std::cin);
 
 	// getters and setters
 	const unsigned int operator()(unsigned int row, unsigned int col) const

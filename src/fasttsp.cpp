@@ -1,23 +1,17 @@
 // INCLUDES
 // STL
 #include <unordered_set>
-#include <limits>
 #include <algorithm>
 // Project
 #include "graph.hpp"
 
-using std::numeric_limits;
 using std::vector;
 using std::unordered_set;
 using std::min_element;
 using std::max_element;
 
-namespace
-{
-	const unsigned int optTrigger = 13;
-	const unsigned int infinity = numeric_limits<unsigned int>::max();
-}	
-
+// a struct for helping with the cheapest insertion heuristic
+// keeps track of distances between a certain vertex and the rest
 struct FastTable
 {
 	vector<unsigned int> distances;
@@ -36,15 +30,8 @@ struct Path Graph::fastTSP(bool useOpt)
 	{
 		return Path();
 	}	
-	// use optimal solution if number of vertices is small enough
-	else if(this->numVertices < optTrigger && useOpt)
-	{
-		Path fake;
-		fake.length = infinity;
-		return this->optTSP(fake);
-	}
 
-	// this is very similar to the MST
+	// this is very similar to finding an MST
 	FastTable t(this->numVertices);
 	unordered_set<unsigned int> remaining;
 	struct Path salespath;
