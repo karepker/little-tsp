@@ -1,5 +1,5 @@
-#ifndef __PATHINFO__
-#define __PATHINFO__
+#ifndef PATHINFO_H
+#define PATHINFO_H
 
 // INCLUDES
 // STL
@@ -98,4 +98,4 @@ struct MatrixInfo
 		const struct PathInfo& p);
 };
 
-#endif // __PATHINFO__
+#endif // PATHINFO_H

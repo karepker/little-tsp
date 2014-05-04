@@ -1,5 +1,5 @@
-#ifndef __COMMON__
-#define __COMMON__
+#ifndef COMMON_H
+#define COMMON_H
 
 #include <string>
 #include <sstream>
@@ -34,4 +34,4 @@ public:
 		ie.max << "\"" << std::endl; return os; };
 };
 
-#endif // __COMMON__
+#endif // COMMON_H

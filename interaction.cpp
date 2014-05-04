@@ -1,13 +1,12 @@
-// INCLUDES
-// Built in
+#include "interaction.hpp"
+
 #include <getopt.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
 #include <iostream>
 #include <fstream>
-// Project
-#include "interaction.hpp"
 
 using std::cout;
 using std::string;
@@ -15,12 +14,9 @@ using std::endl;
 using std::ostringstream;
 using std::ifstream;
 
-namespace 
-{
-	const unsigned int NUM_MODES = NAIVETSP + 1;
-	const char* MODES[NUM_MODES] = { "OPTTSP", "NAIVETSP" };
-	const programmode_t DEFAULT_MODE = OPTTSP;
-}
+const unsigned int NUM_MODES = NAIVETSP + 1;
+const char* MODES[NUM_MODES] = { "OPTTSP", "NAIVETSP" };
+const programmode_t DEFAULT_MODE = OPTTSP;
 
 programmode_t checkMode(const char* optarg)
 {
@@ -36,7 +32,7 @@ programmode_t checkMode(const char* optarg)
 	ostringstream message;
 	message << "Mode did not match one of the specified modes. " <<
 		"Given \"" << optarg << "\"" << endl;
-	throw MessageError(message.str());
+	throw Error{message.str()};
 }
 
 programmode_t parseArgs(int argc, char* argv[])

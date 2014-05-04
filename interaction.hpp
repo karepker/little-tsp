@@ -1,12 +1,12 @@
-#ifndef __INTERACTION__
-#define __INTERACTION__
+#ifndef INTERACTION_H
+#define INTERACTION_H
 
 // INCLUDES
 #include "common.hpp"
 
-enum programmode_t { NOT_SET = 0, OPTTSP, NAIVETSP };
+enum programmode_t { NOT_SET, OPTTSP, NAIVETSP };
 
 programmode_t parseArgs(int argc, char* argv[]);
 programmode_t checkMode(const char* optarg);
 	
-#endif // __INTERACTION__
+#endif // INTERACTION_H

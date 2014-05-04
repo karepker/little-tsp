@@ -1,40 +1,24 @@
-#ifndef __GRAPH__
-#define __GRAPH__
+#ifndef GRAPH_H
+#define GRAPH_H
 
-// INCLUDES
-// Project
-#include "basicgraph.hpp"
+#include <iosfwd>
+#include <sstream>
 
-class Graph
-{
-	unsigned int worldSize;
-	unsigned int numVertices;
-	AdjMat adjMat;
-
-	// helpers for traveling salesperson
-	struct Path naiveTSPHelper(struct Path soFar, std::vector<bool> visited);
-
+/* A simple but sufficent base graph class to give to a TSP solver. */
+class Graph {
 public:
-	explicit Graph(std::istream& input = std::cin);
+	virtual ~Graph() {}
 
 	// getters and setters
-	const unsigned int operator()(unsigned int row, unsigned int col) const
-	{ return this->adjMat(row, col); };
-	unsigned int operator()(unsigned int row, unsigned int col)
-	{ return this->adjMat(row, col); };
-	unsigned int getNumVertices() { return this->numVertices; };
+	virtual int operator()(int row, int col) const = 0;
+	virtual int get_num_vertices() const = 0;
 
-	// TSP Methods
-	struct Path naiveTSP(); // for testing
-	struct Path fastTSP(bool useOpt); 
-	struct Path optTSP();
-	struct Path optTSP(struct Path& fast);
+	// output information about the graph
+	virtual std::stringstream describe() const = 0;
 
-	// validation methods
-	bool isValidPath(const struct Path& p) const;
-
+	// simply calls describe which can be overridden by derived classes
 	friend std::ostream& operator<<(std::ostream& os, 
-		const Graph& graph);
+		const Graph& graph) { describe(); }
 };
 
-#endif // __GRAPH__
+#endif // GRAPH_H

@@ -14,9 +14,7 @@ using std::max_element;
 using std::sort;
 using std::ostream;
 
-namespace {
-	const unsigned int infinity = numeric_limits<unsigned int>::max();
-}
+const unsigned int infinity = numeric_limits<unsigned int>::max();
 
 struct EdgeComp
 {
