@@ -8,7 +8,7 @@
 struct Path {
 	Path() : length{0} {}
 
-	bool operator==(const struct Path& other) const
+	bool operator==(const Path& other) const
 	{ return vertices == other.vertices; };
 
 	friend std::ostream& operator<<(std::ostream& os,
@@ -18,8 +18,6 @@ struct Path {
 	std::vector<int> vertices;
 	// the length of the path through that particular order
 	unsigned int length;
-
-
 };
 
 #endif // PATH_H

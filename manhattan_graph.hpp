@@ -5,6 +5,7 @@
 #include <sstream>
 
 #include "graph.hpp"
+#include "util.hpp"
 
 class ManhattanGraph : public Graph {
 public:
@@ -12,10 +13,10 @@ public:
 
 	// gets information about the graph
 	int operator()(int row, int col) const override;
-	int get_num_vertices() const override { return vertices_.size(); }
+	int GetNumVertices() const override { return vertices_.size(); }
 
 	// outputs size of wold, number of vertices, and then the graph itself
-	std::stringstream describe() const override;
+	std::stringstream Describe() const override;
 
 	friend std::ostream& operator<<(std::ostream& os, 
 		const Graph& graph);
@@ -28,6 +29,5 @@ private:
 	// helpers for traveling salesperson
 	struct Path naiveTSPHelper(struct Path soFar, std::vector<bool> visited);
 };
-
 
 #endif  // MANHATTAN_GRAPH_H

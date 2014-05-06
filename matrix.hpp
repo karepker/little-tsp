@@ -4,21 +4,21 @@
 #include <vector>
 
 template <class T>
-struct Matrix
-{
+class Matrix {
+public:
 	Matrix() {}
-	Matrix(int num) : entries{num} {}
+	Matrix(int num) : entries(num) {}
 
 	// operators for getting costs
 	T operator()(int row, int col)
-	{ return this->entries[row * this->size + col]; }
+	{ return entries[row * this->size + col]; }
 
 	// set the entry
 	void setEntry(int row, int col, T value)
-	{ this->entries[row * this->size + col] = value; }
+	{ entries[row * this->size + col] = value; }
 
-	std::vector<T> entries;
-	int size;
+private:
+	std::vector<T> entries_;
 };
 
 #endif // MATRIX_H

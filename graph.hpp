@@ -11,10 +11,10 @@ public:
 
 	// getters and setters
 	virtual int operator()(int row, int col) const = 0;
-	virtual int get_num_vertices() const = 0;
+	virtual int GetNumVertices() const = 0;
 
 	// output information about the graph
-	virtual std::stringstream describe() const = 0;
+	virtual std::stringstream Describe() const = 0;
 
 	// simply calls describe which can be overridden by derived classes
 	friend std::ostream& operator<<(std::ostream& os, 

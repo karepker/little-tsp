@@ -75,7 +75,7 @@ bool ManhattanGraph::is_valid_path(const struct Path& p) const
 	return length == p.length;
 }
 
-stringstream ManhattanGraph::describe() const
+stringstream ManhattanGraph::Describe() const
 {
 	stringstream ss;
 
