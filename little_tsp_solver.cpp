@@ -46,8 +46,9 @@ Path LittleTSPSolver::Solve(const Graph& graph, int upper_bound) const {
 	// branch and bound, baby, branch and bound
 	while (!nodes.empty()) {
 		// set upper bound
-		int upper_bound{smallest.GetLowerBound() < upper_bound ?
-			smallest.GetLowerBound() : upper_bound};
+		if (smallest.GetLowerBound() < upper_bound) { 
+			upper_bound = smallest.GetLowerBound();
+		}
 
 		// get the root node and remove it from the stack
 		root = nodes.top();
