@@ -6,18 +6,18 @@
 template <class T>
 class Matrix {
 public:
-	Matrix() {}
-	Matrix(int num) : entries(num) {}
+	Matrix(int rows, int cols) : rows_{rows}, entries_(rows * cols) {}
 
 	// operators for getting costs
-	T operator()(int row, int col)
-	{ return entries[row * this->size + col]; }
+	T operator()(int row, int col) const
+	{ return entries_[row * rows_ + col]; }
 
 	// set the entry
-	void setEntry(int row, int col, T value)
-	{ entries[row * this->size + col] = value; }
+	void SetEntry(int row, int col, T value)
+	{ entries_[row * rows_ + col] = value; }
 
 private:
+	int rows_;
 	std::vector<T> entries_;
 };
 

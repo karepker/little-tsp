@@ -1,18 +1,19 @@
 #include "manhattan_graph.hpp"
 
+#include <iostream>
 #include <string>
 #include <sstream>
+#include <vector>
 
 using std::cin;
 using std::endl;
 using std::istream;
 using std::ostream;
-using std::pair;
 using std::string;
-using std::stringstream
+using std::stringstream;
 using std::vector;
 
-ManhattanGraph::ManhattanGraph(istream& input)
+ManhattanGraph::ManhattanGraph(istream& input = cin)
 {
 	// some variables needed
 	int line_num = 0;
@@ -57,25 +58,11 @@ int ManhattanGraph::operator()(int from, int to) const {
 			") limit is: " << num_vertices_ << endl;
 		throw ImplementationError{msg.str().c_str()};
 	}
-	return abs(entries[from].x - entries[to].x) + 
-		abs(entries[from].y - entries[to].y);
+	return abs(vertices_[from].x - vertices_[to].x) + 
+		abs(vertices_[from].y - vertices_[to].y);
 }
 
-// TODO: not sure if this will stay
-bool ManhattanGraph::is_valid_path(const struct Path& p) const
-{
-	// calculate the distance from each edge, make sure sum is correct
-	unsigned int length = 0;
-	for(unsigned int i = 0; i < p.vertices.size(); ++i)
-	{
-		length += this->operator()(p.vertices[i], 
-			p.vertices[(i + 1) % p.vertices.size()]);
-	}
-
-	return length == p.length;
-}
-
-stringstream ManhattanGraph::Describe() const
+string ManhattanGraph::Describe() const
 {
 	stringstream ss;
 
@@ -94,5 +81,5 @@ stringstream ManhattanGraph::Describe() const
 		}
 		ss << endl;
 	}
-	return ss;
+	return ss.str();
 }

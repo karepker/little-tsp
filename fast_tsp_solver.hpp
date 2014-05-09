@@ -8,7 +8,7 @@ class FastTSPSolver : public TSPSolver {
 public:
 	FastTSPSolver() : TSPSolver{false} {}
 
-	Path solve(const Graph&) const override;
+	Path Solve(const Graph&) const override;
 };
 
 #endif  // FAST_TSP_SOLVER_H

@@ -6,19 +6,18 @@
 
 #include "matrix.hpp"
 
-// exception classes
-class NoNextEdge {};
-
 // forward declare
+class CostMatrix;  // defined in the cpp file
 class Graph;
 class Path;
-struct Edge;  // defined in private section
+
+struct Edge { int u, v; };
 
 class TreeNode {
 public:
 	// some constructors
 	TreeNode();
-	TreeNode(const Graph& costs);
+	explicit TreeNode(const Graph& costs);
 	// copy constructor
 	TreeNode(const TreeNode& old, Edge e, bool inc);
 
@@ -28,29 +27,29 @@ public:
 	void AddExclude(const Edge& e);
 
 	// methods to deal with infinite
-	bool IsInfinite(int i, int j) 
-		{ return infinite_(i, j); };
-	void Setinfinite(int i, int j) 
-		{ infinite_.setEntry(i, j, true); }; 
+	bool IsInfinite(int i, int j) const { return infinite_(i, j); };
+	void SetInfinite(int i, int j) { infinite_.SetEntry(i, j, true); };
 
 	// getters
-	int GetLowerBound() const { return lower_bound_; }; 
+	int GetLowerBound() const { return lower_bound_; };
 
 	// branching methods
 	bool HasExcludeBranch() const { return has_exclude_branch_; };
 	Edge GetNextEdge() const { return next_edge_; };
 	
 	// branch determination methods
+	// use the current list of includes to recalculate the lower bound and
+	// mark unavailable rows/columns that have been visited
 	void SetAvailAndLB(const Graph& graph, CostMatrix& info);
-	void CalcLBAndNextEdge(const AdjMat& c);
+	// calculate the lower bound and the next edge, return true if a next edge
+	// was found
+	bool CalcLBAndNextEdge(const Graph& graph);
 	Path GetTSPPath(const Graph& graph) const;
 	
 	// ostream operator
 	friend std::ostream& operator<<(std::ostream& os, const TreeNode& p);
 
 private:
-	struct Edge { int u, v; };
-
 	// edges that are being included 
 	std::vector<Edge> include;
 

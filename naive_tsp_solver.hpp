@@ -8,7 +8,7 @@ class NaiveTSPSolver : public TSPSolver {
 public:
 	NaiveTSPSolver() : TSPSolver{true} {}
 
-	Path solve(const Graph&) const override;
+	Path Solve(const Graph&) const override;
 };
 
 #endif  // NAIVE_TSP_SOLVER_H

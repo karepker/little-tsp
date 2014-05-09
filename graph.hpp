@@ -14,11 +14,10 @@ public:
 	virtual int GetNumVertices() const = 0;
 
 	// output information about the graph
-	virtual std::stringstream Describe() const = 0;
-
-	// simply calls describe which can be overridden by derived classes
-	friend std::ostream& operator<<(std::ostream& os, 
-		const Graph& graph) { describe(); }
+	virtual std::string Describe() const = 0;
 };
+
+// simply calls describe which can be overridden by derived classes
+std::ostream& operator<<(std::ostream& os, const Graph& graph); 
 
 #endif // GRAPH_H

@@ -8,6 +8,8 @@
 #include <iostream>
 #include <fstream>
 
+#include "util.hpp"
+
 using std::cout;
 using std::string;
 using std::endl;
@@ -32,7 +34,7 @@ programmode_t checkMode(const char* optarg)
 	ostringstream message;
 	message << "Mode did not match one of the specified modes. " <<
 		"Given \"" << optarg << "\"" << endl;
-	throw Error{message.str()};
+	throw Error{message.str().c_str()};
 }
 
 programmode_t parseArgs(int argc, char* argv[])

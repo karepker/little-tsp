@@ -9,11 +9,11 @@
 using std::vector;
 using std::numeric_limits;
 
-static Path solve_helper(const Graph& graph, Path soFar, vector<bool>& visited);
+static Path SolveHelper(const Graph& graph, Path soFar, vector<bool> visited);
 
-Path NaiveTSPSolver::solve(const Graph& graph) {
+Path NaiveTSPSolver::Solve(const Graph& graph) const {
 	// if no vertices
-	if (this->numVertices == 0) { return Path(); }
+	if (!graph.GetNumVertices()) { return Path{}; }
 
 	// start at zero, recurse
 	Path start;
@@ -21,32 +21,29 @@ Path NaiveTSPSolver::solve(const Graph& graph) {
 	start.vertices.push_back(0);
 
 	// update the visited bitVector
-	vector<bool> visited(graph.get_num_vertices(), false);
+	vector<bool> visited(graph.GetNumVertices(), false);
 	visited[0] = true;
 
 	// recursive step
-	struct Path minPath = this->naiveTSPHelper(start, visited);
-
+	Path minPath{SolveHelper(graph, start, visited)};
 	return minPath;
 }
 
 // implementation of optimal traveling salesperson methods
-Path solve_helper(const Graph& graph, Path soFar, vector<bool> visited) {
-	struct Path minPath;
-	minPath.length = numeric_limits<unsigned int>::max();
+Path SolveHelper(const Graph& graph, Path soFar, vector<bool> visited) {
+	Path minPath;
+	minPath.length = numeric_limits<int>::max();
 	bool openVertex{false};
 
 	// go to each unvisited vertex
-	for (int i = 0; i < graph.get_num_vertices(); ++i)
-	{
-		if (!visited[i])
-		{
-			// create a new path and update its attributes based on the next vertex
-			struct Path add{soFar};
+	for (int i{0}; i < graph.GetNumVertices(); ++i) {
+		if (!visited[i]) {
+			// copy the current path and update it based on the next vertex
+			Path add{soFar};
 
 			// update add to contain the new vertex as part of the path
 			add.vertices.push_back(i);
-			add.length += operator()(i, add.vertices[add.vertices.size() - 2]);
+			add.length += graph(i, add.vertices[add.vertices.size() - 2]);
 
 			// update the visited bitvector
 			vector<bool> nextVisited{visited};
@@ -54,7 +51,7 @@ Path solve_helper(const Graph& graph, Path soFar, vector<bool> visited) {
 			openVertex = true;
 
 			// recursive step
-			struct Path option = solve_helper(graph, add, nextVisited);
+			Path option{SolveHelper(graph, add, nextVisited)};
 
 			// update the minPath if appropriate
 			if (option.length < minPath.length) { minPath = option; }
@@ -62,10 +59,8 @@ Path solve_helper(const Graph& graph, Path soFar, vector<bool> visited) {
 	}
 
 	// base case: level reached where all vertices are already part of the path
-	if (!openVertex)
-	{
-		soFar.length += operator() 
-			(soFar.vertices[soFar.vertices.size() - 1], 0);
+	if (!openVertex) {
+		soFar.length += graph(soFar.vertices[soFar.vertices.size() - 1], 0);
 		return soFar;
 	}
 

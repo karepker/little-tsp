@@ -8,8 +8,8 @@ class LittleTSPSolver : public TSPSolver {
 public:
 	LittleTSPSolver() : TSPSolver{true} {}
 
-	Path solve(const Graph&) const override;
-	Path solve(const Graph&, Path heurstic) const override;
+	Path Solve(const Graph&) const override;
+	Path Solve(const Graph&, int upper_bound) const override;
 };
 
 #endif  // LITTLE_TSP_SOLVER_H

@@ -5,6 +5,7 @@
 // Project
 #include "graph.hpp"
 
+/*
 using std::cout;
 
 int main()
@@ -14,4 +15,4 @@ int main()
 	Path p = g.naiveTSP();
 	cout << p;
 	return 0;
-}
+} */
