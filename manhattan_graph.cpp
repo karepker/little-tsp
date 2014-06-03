@@ -15,8 +15,7 @@ using std::vector;
 
 ManhattanGraph::ManhattanGraph(istream& input = cin)
 {
-	// some variables needed
-	int line_num = 0;
+	int line_num{0};
 
 	// read the map in
 	while (true)
@@ -40,8 +39,8 @@ ManhattanGraph::ManhattanGraph(istream& input = cin)
 			input >> coord1 >> coord2;
 			// if we haven't reached the end of the file but can't read
 			// coordinates, throw an Error
-			if (!input || !input.eof()) { 
-				throw Error{"Couldn't read coordinates!"}; 
+			if (!input && !input.eof()) {
+				throw Error{"Couldn't read coordinates!"};
 			// if we've reached the end of the file, assume we've read all
 			// vertices
 			} else if (!input) { break; }
