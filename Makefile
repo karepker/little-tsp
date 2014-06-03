@@ -88,7 +88,6 @@ $(OBJECTS_RELEASE_DIR)/%.o $(OBJECTS_DEBUG_DIR)/%.o : $(SRC_DIR)/%.$(SRC_EXT)
 
 # different executables for different targets
 $(EXECUTABLE_DEBUG): $(OBJECTS_DEBUG)
-	@echo "Building debug executable"
 	$(CXX) $(CXXFLAGS) $(CXX_EXTRAS) $^ $(LDFLAGS) -o $@
 
 $(EXECUTABLE_RELEASE): $(OBJECTS_RELEASE)
