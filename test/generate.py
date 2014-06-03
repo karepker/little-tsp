@@ -1,77 +1,58 @@
 #! /usr/bin/python3
 
-import argparse as argparse
-import os as os 
-import random as rand 
-
-################################################################################
-## CONSTANTS
-################################################################################
-
-DEFAULT_NUM_POINTS_START = 10
-DEFAULT_NUM_POINTS_END = 100 
-
-DEFAULT_SIZE = 25
-DEFAULT_NUM_CASES = 1
+import argparse
+import os
+import random 
 
 FILE_PREFIX = "generated-case-"
 FILE_SUFFIX = ".txt"
 
-################################################################################
-## PARSER
-################################################################################
+SCRIPT_DIR = os.path.abspath(os.path.dirname(__file__))
 
-parser = argparse.ArgumentParser(description='Generate test cases for project 4')
-parser.add_argument('-p', '--points', nargs = 2, type = int,
-    default = [DEFAULT_NUM_POINTS_START, DEFAULT_NUM_POINTS_END],
-    help = "Range of number of points per test case")
-parser.add_argument('-s', '--size', nargs = '?', default = DEFAULT_SIZE,
-    type = int, help = "Size of the map to use")
-parser.add_argument('-n', '--num', nargs = '?', default = DEFAULT_NUM_CASES,
-    help = "Number of test cases to generate", type = int)
-parser.add_argument('-q', '--quiet', action = 'store_true')
 
-args = parser.parse_args()
+def find_starting_prefix():
+    """
+    Determines the high numbered test case present in the form 
+    '<FILE_PREFIX>\d+<FILE_SUFFIX>'
 
-################################################################################
-## SCRIPT
-################################################################################
+    Returns:
+        Int: The number one larger than the highest numbered test case
+    """
+    # find starting prefix of file
+    start_case = 0
+    while os.path.exists(os.path.join(SCRIPT_DIR, ''.join([FILE_PREFIX, 
+        str(start_case), FILE_SUFFIX]))):
+        start_case += 1
+    return start_case
 
-# print out some information about runtime
-if not args.quiet:
-    print("Writing " + str(args.num) + " case(s) with between " + 
-        str(args.points[0]) + " and " + str(args.points[1]) + 
-        " points on a map of size " + str(args.size))
+def write_case(case_num, num_points, map_size):
+    """
+    Writes randomly generated test cases to file
 
-# find starting prefix of file
-start_case = 0
-SCRIPT_DIR = os.path.abspath(os.path.join(__file__, os.path.pardir))
-while os.path.exists(SCRIPT_DIR + os.sep + FILE_PREFIX + 
-    str(start_case) + FILE_SUFFIX):
-    start_case += 1
+    Args:
+        case_num (int): The number of the case to write
+        num_points (int): A range over which to uniformly select number of
+            points to write at random
+        map_size (int): The largest x- or y- coordinate possible
 
-# generate cases
-for write_num in range(start_case, start_case + args.num):
-
+    Returns:
+        Name of file written to
+    """
     # make the file and choose number of points to write
-    case_file = open(SCRIPT_DIR + os.sep + FILE_PREFIX + str(write_num) + 
-        FILE_SUFFIX, mode = 'w')
-    num_points = rand.randint(args.points[0], args.points[1])
+    case_file_name = os.path.join(SCRIPT_DIR, ''.join([FILE_PREFIX, 
+        str(case_num), FILE_SUFFIX]))
+    with open(case_file_name, mode = 'w') as case_file:
+        num_points = random.randint(num_points[0], num_points[1])
 
-    # write the header
-    case_file.write(str(args.size) + os.linesep)
-    case_file.write(str(num_points) + os.linesep)
+        # write the header
+        case_file.write(str(map_size) + '\n')
+        case_file.write(str(num_points) + '\n')
 
-    # print out some status info
-    if not args.quiet:
-        print("Writing case " + case_file.name + " with " + 
-            str(num_points) + " points ")
+        # write the points
+        for i in range(0, num_points):
+            point1 = random.randint(0, map_size)
+            point2 = random.randint(0, map_size)
+            case_file.write(''.join([str(point1), " ", str(point2), '\n']))
 
-    # write the points
-    for i in range(0, num_points):
-        point1 = rand.randint(0, args.size)
-        point2 = rand.randint(0, args.size)
-        case_file.write(str(point1) + " " + str(point2) + os.linesep)
+    return case_file_name
 
-if not args.quiet:
-    print("Finished writing all test cases")
