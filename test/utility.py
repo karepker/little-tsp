@@ -3,12 +3,25 @@
 import argparse
 import os
 import random 
+import re
 
 FILE_PREFIX = "generated-case-"
 FILE_SUFFIX = ".txt"
 
-SCRIPT_DIR = os.path.abspath(os.path.dirname(__file__))
+script_dir = os.path.abspath(os.path.dirname(__file__))
+project_dir = os.path.abspath(os.path.join(script_dir, os.pardir))
+project_binary = os.path.join(project_dir, 'littletsp')
 
+# remove any old test cases
+def remove_old_cases():
+    """
+    Removes old generated cases
+    """
+    generated_case_regex = re.compile(''.join([FILE_PREFIX, r'\d+', 
+        FILE_SUFFIX]))
+    for test_case in os.listdir(os.path.join(project_dir, 'test')):
+        if re.match(generated_case_regex, test_case):
+            os.remove(test_case)
 
 def find_starting_prefix():
     """
@@ -20,7 +33,7 @@ def find_starting_prefix():
     """
     # find starting prefix of file
     start_case = 0
-    while os.path.exists(os.path.join(SCRIPT_DIR, ''.join([FILE_PREFIX, 
+    while os.path.exists(os.path.join(script_dir, ''.join([FILE_PREFIX, 
         str(start_case), FILE_SUFFIX]))):
         start_case += 1
     return start_case
@@ -39,8 +52,8 @@ def write_case(case_num, num_points, map_size):
         Name of file written to
     """
     # make the file and choose number of points to write
-    case_file_name = os.path.join(SCRIPT_DIR, ''.join([FILE_PREFIX, 
-        str(case_num), FILE_SUFFIX]))
+    case_file_name = os.path.join(script_dir, ''.join([FILE_PREFIX, 
+        str("%02d" % case_num), FILE_SUFFIX]))
     with open(case_file_name, mode = 'w') as case_file:
         num_points = random.randint(num_points[0], num_points[1])
 
@@ -56,3 +69,19 @@ def write_case(case_num, num_points, map_size):
 
     return case_file_name
 
+def write_cases(num_cases, num_points, map_size):
+    """
+    Writes randomly generated test cases to file
+
+    Args:
+        num_cases (int): The number of cases to write
+        num_points (int): A range over which to uniformly select number of
+            points to write at random
+        map_size (int): The largest x- or y- coordinate possible
+
+    Yields:
+        The name of the case most recently written
+    """
+    start_case = find_starting_prefix()
+    for case_num in range(start_case, start_case + num_cases):
+        yield write_case(case_num, num_points, map_size)

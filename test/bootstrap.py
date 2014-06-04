@@ -1,28 +1,44 @@
 #! /usr/bin/env python3
 
-NUM_BOOTSTRAPS = 10
+DEFAULT_NUM_CASES = 10
+DEFAULT_NUM_POINTS_START = 5
+DEFAULT_NUM_POINTS_END = 10
+DEFAULT_SIZE = 100
+
 NAIVE_FILENAME = '/tmp/naiveout.txt'
 OPT_FILENAME = '/tmp/optout.txt'
 
+import argparse
 import subprocess
 
-import generate
+import utility
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+            description='Check correctness of the optimal TSP algorithm vs. '
+            'naive TSP algorithm')
+    parser.add_argument('-p', '--points', nargs=2, type=int,
+        default=[DEFAULT_NUM_POINTS_START, DEFAULT_NUM_POINTS_END],
+        help='Range of number of points per test case')
+    parser.add_argument('-s', '--size', nargs='?', default=DEFAULT_SIZE,
+        type=int, help='Size of the map to use')
+    parser.add_argument('-n', '--num', nargs='?', default=DEFAULT_NUM_CASES,
+            help='Number of test cases to utility', type=int)
 
-    # bootstrap on an arbitrary number of test cases
-    start_case = generate.find_starting_prefix()
-    for case_num in range(start_case, start_case + NUM_BOOTSTRAPS):
-        case_filename = generate.write_case(case_num, (7, 9), 100)
+    args = parser.parse_args()
+
+    # remove old test cases, utility new cases and bootstrap them
+    utility.remove_old_cases()
+    for case_filename in utility.write_cases(args.num, args.points, args.size):
 
         # run both naive tsp and little tsp
         with open(case_filename, 'r') as case_file, open(NAIVE_FILENAME, 
                 'w') as naive_file:
-                subprocess.call(['../littletsp', '-m', 'NAIVETSP'], 
+                subprocess.call([utility.project_binary, '-m', 'NAIVETSP'], 
                         stdin=case_file, stdout=naive_file)
         with open(case_filename, 'r') as case_file, open(
                 OPT_FILENAME, 'w') as opt_file:
-                subprocess.call(['../littletsp', '-m', 'OPTTSP'], 
+                subprocess.call([utility.project_binary, '-m', 'OPTTSP'], 
                         stdin=case_file, stdout=opt_file)
 
 
