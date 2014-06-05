@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
 		return 3;
 	}
 
-	unique_ptr<Graph> graph = CreateGraph("manhattan", cin);
+	unique_ptr<Graph> graph{CreateGraph("manhattan", cin)};
 	unique_ptr<TSPSolver> tsp_solver;
 
 	// do the calculations
