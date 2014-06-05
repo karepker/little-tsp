@@ -14,9 +14,6 @@ DEFAULT_NUM_POINTS_END = 100
 DEFAULT_SIZE = 25
 DEFAULT_NUM_CASES = 10
 
-FILE_PREFIX = "utilityd-case-"
-FILE_SUFFIX = ".txt"
-
 def benchmark_solution(command, case_filename):
     """
     Benchmark the command by seeing how long it takes to execute
@@ -51,8 +48,14 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # run the binary on all the cases
-    subprocess.Popen('make', cwd=utility.project_dir)
+    subprocess.Popen('make', cwd=utility.project_dir, stdout=subprocess.DEVNULL)
     utility.remove_old_cases()
+    header_format = "{:>5} | {:>16} | {:>16} | {:>16} | {:>16}"
+    print(header_format.format("", "", "", "", "Relative Percent"))
+    print(header_format.format("Case", "Naive Time (s)", "Optimal Time (s)", 
+        "Difference (s)", "Difference(%)"))
+    print("{:->5}-+-{:->16}-+-{:->16}-+-{:->16}-+-{:->16}".format("", "", "",
+        "", ""))
     for case_filename in utility.write_cases(args.num, args.points, args.size):
 
         # benchmark naive and optimal solutions
@@ -65,9 +68,10 @@ if __name__ == '__main__':
         diff = naive_time - opt_time
         average = (naive_time + opt_time) / 2
         if not average == 0:
-            rpd = diff / average * 100
+            rpd = diff / average
         else:
             rpd = 0
-        stats = "{}: {} {} {} {}".format(case_filename, naive_time,
-                opt_time, diff, rpd)
+        case_num = utility.get_case_num(case_filename)
+        stats = "{:>5} | {:>16.2} | {:>16.2} | {:>16.2} | {:>16.2%}".format(
+                case_num, naive_time, opt_time, diff, rpd)
         print(stats)

@@ -12,16 +12,32 @@ script_dir = os.path.abspath(os.path.dirname(__file__))
 project_dir = os.path.abspath(os.path.join(script_dir, os.pardir))
 project_binary = os.path.join(project_dir, 'littletsp')
 
-# remove any old test cases
+def get_case_num(case_filename):
+    """
+    Takes a filename and returns the case number
+
+    Args:
+        case_filename (string): The filename of the case for which to find the
+        number
+    
+    Returns:
+        Integer number of case
+    """
+    regex_string = ''.join([r'.*', FILE_PREFIX, r'(?P<case_num>\d+)', 
+        FILE_SUFFIX])
+    case_num_match = re.search(regex_string, case_filename)
+    return int(case_num_match.group('case_num'))
+
 def remove_old_cases():
     """
     Removes old generated cases
     """
     generated_case_regex = re.compile(''.join([FILE_PREFIX, r'\d+', 
         FILE_SUFFIX]))
-    for test_case in os.listdir(os.path.join(project_dir, 'test')):
+    test_dir = os.path.join(project_dir, 'test')
+    for test_case in os.listdir(test_dir):
         if re.match(generated_case_regex, test_case):
-            os.remove(test_case)
+            os.remove(os.path.join(test_dir, test_case))
 
 def find_starting_prefix():
     """
