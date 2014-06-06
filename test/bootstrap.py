@@ -34,13 +34,17 @@ if __name__ == '__main__':
         # run both naive tsp and little tsp
         with open(case_filename, 'r') as case_file, open(NAIVE_FILENAME, 
                 'w') as naive_file:
-                subprocess.call([utility.project_binary, '-m', 'NAIVETSP'], 
-                        stdin=case_file, stdout=naive_file)
+                naive_process = subprocess.Popen([utility.project_binary, 
+                    '-m', 'NAIVETSP'], stdin=case_file, stdout=naive_file)
+
         with open(case_filename, 'r') as case_file, open(
                 OPT_FILENAME, 'w') as opt_file:
-                subprocess.call([utility.project_binary, '-m', 'OPTTSP'], 
-                        stdin=case_file, stdout=opt_file)
+                opt_process = subprocess.Popen([utility.project_binary, 
+                    '-m', 'OPTTSP'], stdin=case_file, stdout=opt_file)
 
+        # wait for the processes to finish before reading output
+        opt_process.wait()
+        naive_process.wait()
 
         with open(NAIVE_FILENAME, 'r') as naive_file:
             naive_distance = int(naive_file.readline())

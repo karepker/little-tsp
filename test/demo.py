@@ -8,8 +8,8 @@ import time
 
 import utility
 
-DEFAULT_NUM_POINTS_START = 10
-DEFAULT_NUM_POINTS_END = 100 
+DEFAULT_NUM_POINTS_START = 5
+DEFAULT_NUM_POINTS_END = 8
 
 DEFAULT_SIZE = 25
 DEFAULT_NUM_CASES = 10
@@ -27,8 +27,9 @@ def benchmark_solution(command, case_filename):
     """
     with open(case_filename, 'r') as case_file:
         start_time = time.perf_counter()
-        subprocess.Popen(command, stdin=case_file, stdout=subprocess.DEVNULL,
-                cwd=utility.project_dir)
+        solution = subprocess.Popen(command, stdin=case_file, 
+                stdout=subprocess.DEVNULL, cwd=utility.project_dir)
+        solution.wait()
         elapsed_time = time.perf_counter() - start_time
     return elapsed_time
 
@@ -51,9 +52,8 @@ if __name__ == '__main__':
     subprocess.Popen('make', cwd=utility.project_dir, stdout=subprocess.DEVNULL)
     utility.remove_old_cases()
     header_format = "{:>5} | {:>16} | {:>16} | {:>16} | {:>16}"
-    print(header_format.format("", "", "", "", "Relative Percent"))
     print(header_format.format("Case", "Naive Time (s)", "Optimal Time (s)", 
-        "Difference (s)", "Difference(%)"))
+        "Difference (s)", "Speedup "))
     print("{:->5}-+-{:->16}-+-{:->16}-+-{:->16}-+-{:->16}".format("", "", "",
         "", ""))
     for case_filename in utility.write_cases(args.num, args.points, args.size):
@@ -66,12 +66,11 @@ if __name__ == '__main__':
    
         # calculate and print statistics
         diff = naive_time - opt_time
-        average = (naive_time + opt_time) / 2
-        if not average == 0:
-            rpd = diff / average
+        if opt_time:
+            speedup = naive_time / opt_time
         else:
-            rpd = 0
+            speedup = 0
         case_num = utility.get_case_num(case_filename)
-        stats = "{:>5} | {:>16.2} | {:>16.2} | {:>16.2} | {:>16.2%}".format(
-                case_num, naive_time, opt_time, diff, rpd)
+        stats = "{:>5} | {:>16.4} | {:>16.4} | {:>16.4} | {:>15.4}x".format(
+                case_num, naive_time, opt_time, diff, speedup)
         print(stats)
