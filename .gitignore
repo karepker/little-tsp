@@ -3,3 +3,5 @@ littletspd
 build/*
 test/*.txt
 *.swp
+.fuse_hidden*
+*__pycache__
