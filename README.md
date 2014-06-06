@@ -28,20 +28,20 @@ is a valid input file. The vertex with coordinates with coordinates `1 29` would
 ## Output
 The shortest path found printed to standard output (`std::cout`) in the following format. Line 1 contains the total length of the cycle found. Line 2 contains each vertex `i` in the order that they must be visited in order to find the shortest cycle. This output always starts at vertex 0, and is assumed to finish at vertex 0 (though the final 0 is not printed). For example:
 
-178  
-0 1 3 2  
+178
+0 1 3 2
 
 would be the output for the input file given above.
 
 ## Instructions to configure and run
-After cloning the repository into a local directory, `cd` into that directory and type `./configure.sh; make`. To run individual cases of the program manually, type `littletsp < input.txt` (equivalently `littletsp -m OPTTSP < input.txt`), where `input.txt` is the path to a valid input file as described above. This program also provides a brute force algorithm for solving the TSP that conducts a simple depth first search and returns the minimum path. This may be used by typing `littletsp -m NAIVETSP < input.txt`. Also, typing `littletsp --help` will print a help message displaying options for running. Finally, running the demo script (type `./demo.sh`) will provide a demonstration of the Little algorithm's speedup vs the naive implementation.
+After cloning the repository into a local directory, `cd` into that directory and run `make`. To run individual cases of the program manually, type `littletsp < input.txt` (equivalently `littletsp -m OPTTSP < input.txt`), where `input.txt` is the path to a valid input file as described above. This program also provides a brute force algorithm for solving the TSP that conducts a simple depth first search and returns the minimum path. This may be used by typing `littletsp -m NAIVETSP < input.txt`. Also, typing `littletsp --help` will print a help message displaying options for running. Finally, running the demo script (`python test/demo.py`) will provide a demonstration of Little's algorithm's speedup vs the naive implementation.
 
 ## Modification
-It would probably be most easy and useful to modify the input format and edges. To modify the input format, see the constructor for `Graph` in `src/graph.cpp`. To modify the way the weights for edges are calculated, or the way the adjacency matrix is stored, see `include/basicgraph.hpp` and `src/basicgraph.cpp`. To modify the initial heuristic used for an upper bound, look in `src/fasttsp.cpp`. The branch and bound algorithm itself can be found mostly in the `include/pathinfo.hpp`, `src/pathinfo.cpp`, and `src/opttsp.cpp` files. The commands `make debug` (builds `littletspd`, which has debugging flags) and `make clean` (cleans `.o` files, `littletsp`, and `littletspd` from the directory) may be useful for development purposes.
+It would probably be most easy and useful to modify the input format and edges. To modify the input format, see the constructor for `Graph` in `manhattan_graph.cpp`. Additional graphs can be added by inheriting from the `Graph` class in `graph.cpp`. The branch and bound algorithm itself can be found mostly in the `treenode.*`, and `little_tsp_solver.*` files. The commands `make debug` (builds `littletspd`, which has debugging flags) and `make clean` (removes binaries and intermediate build targets) may be useful for development purposes.
 
 ## License
 little-tsp, an implementation of the branch and bound algorithm for the TSP as described in a 1963 paper by Little et al 
-Copyright (C) 2012 Kar Epker
+Copyright (C) 2012-2014 Kar Epker
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
