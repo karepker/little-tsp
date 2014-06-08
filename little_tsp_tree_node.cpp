@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <deque>
+#include <exception>
 #include <limits>
 
 #include "graph.hpp"
@@ -11,6 +12,7 @@
 #include "path.hpp"
 
 using std::deque;
+using std::exception;
 using std::max_element;
 using std::numeric_limits;
 using std::ostream;
@@ -19,6 +21,15 @@ using std::sort;
 using std::vector;
 
 const int infinity{numeric_limits<int>::max()};
+
+class NotAvailableError : public exception {
+public:
+	ImplementationError(const char* msg) : msg_{msg} {}
+	const char* what() const noexcept override { return msg_; }
+
+private:
+	const char* msg_;
+};
 
 // information about the useable matrix
 // temporary that is used to help build a TreeNode
@@ -43,6 +54,118 @@ public:
 	void SetRowUnavailable(int row) { row_available_[row] = false; }
 	void SetColumnUnavailable(int column) { column_available_[column] = false; }
 
+	// encapsulation of cost information about either a single row or a column
+	// defines iterator which allows easier traversal and more use of STL
+	class CostVector {
+	public:
+		CostVector(const Graph& graph, Matrix<bool> infinite) : 
+			graph_{graph}, infinite_{infinite} {}
+
+		int operator[](int cell_num) const {
+			int row_num{GetRow(cell_num_)};
+			int column_num{GetColumn(cell_num_)};
+
+			if (!CellAvailable(cell_num_)) {
+				throw NotAvailableError{"That index is not available!"};
+			} else if (infinite_(row_num, column_num)) { return infinity; }
+
+			return graph(row_num, column_num) - row_reductions_(row_num) - 
+				column_reductions_(column_num);
+		}
+
+		class Iterator;
+		// we need access to the protected interface in cost vector and the
+		// subscripting operation
+		friend class Iterator;
+
+		class Iterator {
+		public:
+			Iterator(const CostVector& cost_vector) : 
+				cost_vector_{cost_vector}, traversing_cell_num_{0} {}
+
+			int operator*() { return cost_vector_[traversing_cell_num_]; }
+
+			Iterator operator++(int) {
+				int current_traversing_cell_num{traversing_cell_num_}
+				++traversing_cell_num_;
+				return Iterator{cost_vector_, traversing_cell_num_};
+			}
+
+			Iterator operator++() {
+				while (!cost_vector_.CellAvailable(traversing_cell_num_));
+				return *this;
+			}
+
+			bool operator==(const Iterator& other) {
+				return cost_vector_ == other.cost_vector_ && 
+					traversing_cell_num_ == other.traversing_cell_num_;
+			}
+
+			bool operator!=(const Iterator& other) { return !(*this == other); }
+
+		private:
+			Iterator(const CostColumn& cost_column, int row_num) : 
+				cost_column{cost_column_}, row_num_{row_num} {}
+
+			CostColumn& cost_column_;
+			int traversing_cell_num_;  // changes as iterator moves
+		};
+
+		Iterator begin() { return Iterator{*this}; }
+		Iterator end() { return Iterator{*this, graph.GetNumVertices() + 1}; }
+
+	protected:
+		// define interface for derived classes because CostVector doesn't know
+		// if it's a row or column
+		virtual bool CellAvailable(int cell_num) const = 0;
+		virtual int GetRow(int cell_num) const = 0;
+		virtual int GetColumn(int cell_num) const = 0;
+
+	private:
+		const Graph& graph_;
+		const Matrix<bool>& infinite_;
+		const int column_num_;
+	};
+
+	class CostColumn : public CostVector {
+	public:
+		CostColumn(const Graph& graph, Matrix<bool> infinite, int column_num) : 
+				CostVector{graph, infinite}, column_num_{column_num} {
+			if (columns_available[column_num_]) { 
+				throw NotAvailableError{"That column is not available"};
+			}
+		}
+
+	private:
+		bool CellAvailable(int cell_num) const override { 
+			return row_available_[cell_num]; 
+		}
+		bool GetRow(int cell_num) const override { return cell_num; }
+		bool GetColumn(int) const override { return column_num_; }
+
+		int column_num_;
+	};
+
+	class CostRow : public CostVector {
+	public:
+		CostRow(const Graph& graph, Matrix<bool> infinite, int row_num) : 
+				CostVector{graph, infinite}, row_num_{row_num} {
+			if (rows_available[row_num_]) { 
+				throw NotAvailableError{"That row is not available"};
+			}
+		}
+
+	private:
+		bool CellAvailable(int cell_num) const override { 
+			return column_available_[cell_num]; 
+		}
+		bool GetColumn(int cell_num) const override { return cell_num; }
+		bool GetRow(int) const override { return row_num_; }
+
+		int row_num_;
+	};
+
+	
 private:
 	// whether the rows are available
 	vector<int> row_reductions_;
