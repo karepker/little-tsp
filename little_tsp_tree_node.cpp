@@ -24,7 +24,7 @@ const int infinity{numeric_limits<int>::max()};
 
 class NotAvailableError : public exception {
 public:
-	ImplementationError(const char* msg) : msg_{msg} {}
+	NotAvailableError(const char* msg) : msg_{msg} {}
 	const char* what() const noexcept override { return msg_; }
 
 private:
@@ -45,10 +45,16 @@ public:
 	int ReduceMatrix(const Graph& graph, const TreeNode& p);
 
 	// getters
-	int GetRowReduction(int row) { return row_reductions_[row]; }
-	int GetColumnReduction(int column) { return column_reductions_[column]; }
-	int IsRowAvailable(int row) { return row_available_[row]; }
-	int IsColumnAvailable(int column) { return column_available_[column]; }
+	int GetRowReduction(int row) const { return row_reductions_[row]; }
+	int GetColumnReduction(int column) const { 
+		return column_reductions_[column]; 
+	}
+	int IsRowAvailable(int row) const { 
+		return row_available_[row]; 
+	}
+	int IsColumnAvailable(int column) const { 
+		return column_available_[column]; 
+	}
 
 	// setters
 	void SetRowUnavailable(int row) { row_available_[row] = false; }
@@ -58,61 +64,39 @@ public:
 	// defines iterator which allows easier traversal and more use of STL
 	class CostVector {
 	public:
-		CostVector(const Graph& graph, Matrix<bool> infinite) : 
+		CostVector(const Graph& graph, const CostMatrix& cost_matrix, 
+				const Matrix<bool>& infinite) : cost_matrix_{cost_matrix}, 
 			graph_{graph}, infinite_{infinite} {}
 
-		int operator[](int cell_num) const {
-			int row_num{GetRow(cell_num_)};
-			int column_num{GetColumn(cell_num_)};
+		int operator[](int cell_num) const;
 
-			if (!CellAvailable(cell_num_)) {
-				throw NotAvailableError{"That index is not available!"};
-			} else if (infinite_(row_num, column_num)) { return infinity; }
-
-			return graph(row_num, column_num) - row_reductions_(row_num) - 
-				column_reductions_(column_num);
-		}
-
-		class Iterator;
 		// we need access to the protected interface in cost vector and the
 		// subscripting operation
+		class Iterator;
 		friend class Iterator;
 
 		class Iterator {
 		public:
-			Iterator(const CostVector& cost_vector) : 
+			Iterator(const CostVector& cost_vector) :
 				cost_vector_{cost_vector}, traversing_cell_num_{0} {}
 
 			int operator*() { return cost_vector_[traversing_cell_num_]; }
 
-			Iterator operator++(int) {
-				int current_traversing_cell_num{traversing_cell_num_}
-				++traversing_cell_num_;
-				return Iterator{cost_vector_, traversing_cell_num_};
-			}
+			Iterator operator++(int);
+			Iterator& operator++();
 
-			Iterator operator++() {
-				while (!cost_vector_.CellAvailable(traversing_cell_num_));
-				return *this;
-			}
-
-			bool operator==(const Iterator& other) {
-				return cost_vector_ == other.cost_vector_ && 
-					traversing_cell_num_ == other.traversing_cell_num_;
-			}
-
-			bool operator!=(const Iterator& other) { return !(*this == other); }
+			friend class CostVector;
 
 		private:
-			Iterator(const CostColumn& cost_column, int row_num) : 
-				cost_column{cost_column_}, row_num_{row_num} {}
+			Iterator(const CostVector& cost_vector, int cell_num) :
+				cost_vector_{cost_vector}, traversing_cell_num_{cell_num} {}
 
-			CostColumn& cost_column_;
+			const CostVector& cost_vector_;
 			int traversing_cell_num_;  // changes as iterator moves
 		};
 
 		Iterator begin() { return Iterator{*this}; }
-		Iterator end() { return Iterator{*this, graph.GetNumVertices() + 1}; }
+		Iterator end() { return Iterator{*this, graph_.GetNumVertices() + 1}; }
 
 	protected:
 		// define interface for derived classes because CostVector doesn't know
@@ -121,50 +105,54 @@ public:
 		virtual int GetRow(int cell_num) const = 0;
 		virtual int GetColumn(int cell_num) const = 0;
 
+		// this is usually bad design, but it exposes a needed interface
+		const CostMatrix& cost_matrix_;
+
 	private:
 		const Graph& graph_;
 		const Matrix<bool>& infinite_;
-		const int column_num_;
 	};
 
 	class CostColumn : public CostVector {
 	public:
-		CostColumn(const Graph& graph, Matrix<bool> infinite, int column_num) : 
-				CostVector{graph, infinite}, column_num_{column_num} {
-			if (columns_available[column_num_]) { 
+		CostColumn(const Graph& graph, const CostMatrix& cost_matrix_, 
+				Matrix<bool> infinite, int column_num) :
+				CostVector{graph, cost_matrix_, infinite}, 
+				column_num_{column_num} {
+			if (cost_matrix_.IsColumnAvailable(column_num_)) { 
 				throw NotAvailableError{"That column is not available"};
 			}
 		}
 
 	private:
 		bool CellAvailable(int cell_num) const override { 
-			return row_available_[cell_num]; 
+			return cost_matrix_.IsRowAvailable(cell_num); 
 		}
-		bool GetRow(int cell_num) const override { return cell_num; }
-		bool GetColumn(int) const override { return column_num_; }
+		int GetRow(int cell_num) const override { return cell_num; }
+		int GetColumn(int) const override { return column_num_; }
 
 		int column_num_;
 	};
 
 	class CostRow : public CostVector {
 	public:
-		CostRow(const Graph& graph, Matrix<bool> infinite, int row_num) : 
-				CostVector{graph, infinite}, row_num_{row_num} {
-			if (rows_available[row_num_]) { 
+		CostRow(const Graph& graph, const CostMatrix& cost_matrix_, 
+				Matrix<bool> infinite, int row_num) :
+				CostVector{graph, cost_matrix_, infinite}, row_num_{row_num} {
+			if (cost_matrix_.IsRowAvailable(row_num_)) {
 				throw NotAvailableError{"That row is not available"};
 			}
 		}
 
 	private:
 		bool CellAvailable(int cell_num) const override { 
-			return column_available_[cell_num]; 
+			return cost_matrix_.IsColumnAvailable(cell_num); 
 		}
-		bool GetColumn(int cell_num) const override { return cell_num; }
-		bool GetRow(int) const override { return row_num_; }
+		int GetColumn(int cell_num) const override { return cell_num; }
+		int GetRow(int) const override { return row_num_; }
 
 		int row_num_;
 	};
-
 	
 private:
 	// whether the rows are available
@@ -176,6 +164,30 @@ private:
 	vector<bool> column_available_;
 };
 
+using CostIterator = CostMatrix::CostVector::Iterator;
+
+int CostMatrix::CostVector::operator[](int cell_num) const {
+	int row_num{GetRow(cell_num)};
+	int column_num{GetColumn(cell_num)};
+
+	if (!CellAvailable(cell_num)) {
+		throw NotAvailableError{"That index is not available!"};
+	} else if (infinite_(row_num, column_num)) { return infinity; }
+
+	return graph_(row_num, column_num) - cost_matrix_.GetRowReduction(row_num) - 
+		cost_matrix_.GetColumnReduction(column_num);
+}
+
+CostIterator CostIterator::operator++(int) {
+	int current_traversing_cell_num{traversing_cell_num_};
+	while (!cost_vector_.CellAvailable(++traversing_cell_num_));
+	return Iterator{cost_vector_, current_traversing_cell_num};
+}
+
+CostIterator& CostIterator::operator++() {
+	while (!cost_vector_.CellAvailable(++traversing_cell_num_));
+	return *this;
+}
 
 // these methods will fail if there's no min
 int CostMatrix::ReduceRow(int i, const Graph& graph, const TreeNode& p) {
