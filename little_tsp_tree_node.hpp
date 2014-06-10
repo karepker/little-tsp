@@ -50,8 +50,9 @@ public:
 	friend std::ostream& operator<<(std::ostream& os, const TreeNode& p);
 
 private:
-	// edges that are being included 
-	std::vector<Edge> include;
+	// edges that are being included and excluded
+	std::vector<Edge> include_;
+	std::vector<Edge> exclude_;
 
 	// bit matrix corresponding to the matrix cells set to infinite
 	// kept here instead of CostMatrix to keep track of excludes

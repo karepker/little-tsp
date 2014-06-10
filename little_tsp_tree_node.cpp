@@ -8,6 +8,7 @@
 #include <limits>
 
 #include "graph.hpp"
+#include "little_tsp_cost_matrix_integer.hpp"
 #include "matrix.hpp"
 #include "path.hpp"
 
@@ -35,30 +36,33 @@ private:
 // temporary that is used to help build a TreeNode
 class CostMatrix {
 public:
-	CostMatrix(int size) : row_reductions_(size, 0), 
-		column_reductions_(size, 0), row_available_(size, true), 
-		column_available_(size, true) {};
-
+	CostMatrix(const Graph& graph, const vector<Edge>& include, 
+			const vector<Edge>& exclude) : 
+			cost_matrix_{graph.GetNumVertices(), graph.GetNumVertices()},
+		
 	// reduce the matrix by storing information about reduction
 	int ReduceRow(int i, const Graph& graph, const TreeNode& p);
 	int ReduceCol(int j, const Graph& graph, const TreeNode& p);
 	int ReduceMatrix(const Graph& graph, const TreeNode& p);
 
 	// getters
-	int GetRowReduction(int row) const { return row_reductions_[row]; }
-	int GetColumnReduction(int column) const { 
-		return column_reductions_[column]; 
-	}
-	int IsRowAvailable(int row) const { 
-		return row_available_[row]; 
-	}
-	int IsColumnAvailable(int column) const { 
-		return column_available_[column]; 
-	}
+	int GetRowReduction(int row) const;
+	int GetColumnReduction(int column) const;	
+	int IsRowAvailable(int row) const;	
+	int IsColumnAvailable(int column) const;
 
 	// setters
-	void SetRowUnavailable(int row) { row_available_[row] = false; }
-	void SetColumnUnavailable(int column) { column_available_[column] = false; }
+	void SetRowUnavailable(int row);
+	void SetColumnUnavailable(int column);
+
+	// these classes need to be able to share data with each other because they
+	// are very intimately related
+	class CostVector;
+	class CostRow;
+	class CostColumn;
+	friend class CostVector;
+	friend class CostRow;
+	friend class CostColumn;
 
 	// encapsulation of cost information about either a single row or a column
 	// defines iterator which allows easier traversal and more use of STL
@@ -155,13 +159,7 @@ public:
 	};
 	
 private:
-	// whether the rows are available
-	vector<int> row_reductions_;
-	vector<int> column_reductions_;
-
-	// whether the columns are available
-	vector<bool> row_available_;
-	vector<bool> column_available_;
+	Matrix<CostMatrixInteger> cost_matrix_;
 };
 
 using CostIterator = CostMatrix::CostVector::Iterator;
@@ -256,9 +254,8 @@ int CostMatrix::ReduceMatrix(const Graph& graph, const TreeNode& p) {
 }
 
 // constructor for the "root" TreeNode
-TreeNode::TreeNode(const Graph& costs) :
-		infinite_{costs.GetNumVertices(), costs.GetNumVertices()}, 
-		has_exclude_branch_{true}, lower_bound_{infinity} {
+TreeNode::TreeNode(const Graph& costs) : has_exclude_branch_{true}, 
+		lower_bound_{infinity} {
 	// set all elements on the diagonal as infinite
 	for (int diag{0}; diag < costs.GetNumVertices(); ++diag)
 		{ SetInfinite(diag, diag); }
@@ -274,7 +271,7 @@ void TreeNode::AddInclude(const Edge& e) {
 	while(found_edge)
 	{
 		found_edge = false;
-		for (const Edge& check : include)
+		for (const Edge& check : include_)
 		{
 			// determine if "check" goes before in a subtour
 			if (check.v == subtour.front())
@@ -297,20 +294,20 @@ void TreeNode::AddInclude(const Edge& e) {
 	}
 
 	// add the edge onto include
-	include.push_back(e);
+	include_.push_back(e);
 
 	// make the ends of the longest subtour infinite
-	SetInfinite(subtour.back(), subtour.front());
+	exclude_.push_back({subtour.back(), subtour.front()});
 }
 
-void TreeNode::AddExclude(const Edge& e) { SetInfinite(e.u, e.v); }
+void TreeNode::AddExclude(const Edge& e) { exclude_.push_back(e); }
 
 void TreeNode::SetAvailAndLB(const Graph& graph, CostMatrix& info) {
 	// reset lower bound
 	lower_bound_ = 0;
 
 	// start its calculation using the cost of the includes
-	for (const Edge& e : include) {
+	for (const Edge& e : include_) {
 		lower_bound_ += graph(e.u, e.v);
 		info.SetRowUnavailable(e.u);
 		info.SetColumnUnavailable(e.v);
@@ -322,14 +319,14 @@ void TreeNode::SetAvailAndLB(const Graph& graph, CostMatrix& info) {
 Path TreeNode::GetTSPPath(const Graph& graph) const {
 	// create the solution path
 	Path solution;
-	solution.vertices.reserve(include.size());
+	solution.vertices.reserve(include_.size());
 
 	// to help find the path
 	int past_vertex{0};
 	int vertex{0};
 
 	// sort the edges and then find the path through them
-	vector<Edge> edges = include;
+	vector<Edge> edges = include_;
 	sort(edges.begin(), edges.end(), 
 			[](const Edge& first, const Edge& second) 
 			{ return first.u < second.u; });
@@ -353,7 +350,7 @@ Path TreeNode::GetTSPPath(const Graph& graph) const {
 
 ostream& operator<<(ostream& os, const TreeNode& p) {
 	os << "{ ";
-	for (const Edge& e : p.include) { os << "(" << e.u << " " << e.v << ") "; }
+	for (const Edge& e : p.include_) { os << "(" << e.u << " " << e.v << ") "; }
 	os << " } ";
 	return os;
 }
@@ -424,14 +421,14 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 
 		// 3 cases
 		// 1. base case: 2 edges left to add
-		if (graph.GetNumVertices() - include.size() == 2) {
+		if (graph.GetNumVertices() - include_.size() == 2) {
 			penalties[counter++] = infinity;
 			break;
 		}
 
 		// 2. case when excluding the node creates a disconnected graph
 		else if (found_min_col != found_min_row && 
-				graph.GetNumVertices() - include.size() != 2) {
+				graph.GetNumVertices() - include_.size() != 2) {
 			// we must choose this edge and cannot branch
 			next_edge_ = zero;
 			has_exclude_branch_ = false;
@@ -446,7 +443,7 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 	int index(max_penalty_it - penalties.begin());
 
 	// handle the base case
-	if (graph.GetNumVertices() - include.size() == 2) {
+	if (graph.GetNumVertices() - include_.size() == 2) {
 		AddInclude(zeros[index]);
 		info.SetRowUnavailable(zeros[index].u);
 		info.SetColumnUnavailable(zeros[index].v);
