@@ -54,10 +54,6 @@ private:
 	std::vector<Edge> include_;
 	std::vector<Edge> exclude_;
 
-	// bit matrix corresponding to the matrix cells set to infinite
-	// kept here instead of CostMatrix to keep track of excludes
-	Matrix<bool> infinite_;
-
 	// keeping track for future TreeNodes
 	Edge next_edge_;
 	bool found_lb_and_edge_;

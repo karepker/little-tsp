@@ -14,6 +14,15 @@ private:
 	const char* msg_;
 };
 
+class NotAvailableError : public ImplementationError {
+public:
+	NotAvailableError(const char* msg) : msg_{msg} {}
+	const char* what() const noexcept override { return msg_; }
+
+private:
+	const char* msg_;
+};
+
 /* class for errors that arise from bad input (e.g. bad graph input file) */
 class Error : public std::exception {
 public:

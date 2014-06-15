@@ -20,9 +20,14 @@ public:
 	T operator()(int row, int col) const
 	{ return entries_[row * rows_ + col]; }
 
+	T& GetReference(int row, int col)
+	{ return entries_[row * rows_ + col]; }
+
 	// set the entry
 	void SetEntry(int row, int col, T value)
 	{ entries_[row * rows_ + col] = value; }
+
+	int size() { return rows_; }
 
 private:
 	int rows_;
