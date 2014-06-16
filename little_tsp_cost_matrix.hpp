@@ -6,23 +6,35 @@
 #include "matrix.hpp"
 
 class Graph;
+class CostMatrixInteger;
 struct Edge;
 
 // information about the useable matrix
 // temporary structure that is used to help build a TreeNode
 class CostMatrix {
 public:
-	CostMatrix(const Graph& graph, const vector<Edge>& include, 
-			const vector<Edge>& exclude);
-	// reduce the matrix by storing information about reduction
-	int ReduceRow(int i, const Graph& graph, const TreeNode& p);
-	int ReduceCol(int j, const Graph& graph, const TreeNode& p);
-	int ReduceMatrix(const Graph& graph, const TreeNode& p);
+	CostMatrix(const Graph& graph, const std::vector<Edge>& include, 
+			const std::vector<Edge>& exclude);
 
+	int ReduceMatrix();
+
+	CostMatrixInteger operator()(int row_num, int column_num) const;
+
+	bool IsRowAvailable(int row_num) const { return row_available_[row_num]; }
+	bool IsColumnAvailable(int column_num) const { 
+		return column_available_[column_num]; 
+	}
+	int size() const { return cost_matrix_.size().first; }
+
+	class CostVector;
+	class CostRow; 
+	class CostColumn;
 	// these classes need to be able to share data with each other because they
 	// are very intimately related
-	class CostVector;
 	friend class CostVector;
+
+	CostRow GetRow(int row_num) const;
+	CostColumn GetColumn(int column_num) const;
 
 	// encapsulation of cost information about either a single row or a column
 	// defines iterator which allows easier traversal and more use of STL
@@ -47,6 +59,10 @@ public:
 				return cost_vector_[traversing_cell_index_]; 
 			}
 
+			CostMatrixInteger* operator*() { 
+				return &cost_vector_[traversing_cell_index_]; 
+			}
+
 			Iterator operator++(int);
 			Iterator& operator++();
 
@@ -65,19 +81,20 @@ public:
 
 		Iterator begin() { return Iterator{*this}; }
 		Iterator end() { 
-			return Iterator{*this, cost_matrix_.cost_matrix_.GetNumVertices()}; 
+			return Iterator{*this, cost_matrix_.cost_matrix_.size()}; 
 		}
 
 	protected:
 		// define interface for derived classes because CostVector doesn't know
 		// if it's a row or column
-		virtual bool CellAvailable(int cell_num) const = 0;
 		virtual int GetRow(int cell_num) const = 0;
 		virtual int GetColumn(int cell_num) const = 0;
 
-		bool IsRowAvailable(int row_num) { return row_available_[row_num]; }
-		bool IsColumnAvailable(int row_num) { 
-			return column_available_[column_num]; 
+		bool IsRowAvailable(int row_num) { 
+			return cost_matrix_.IsRowAvaiable(row_num); 
+		}
+		bool IsColumnAvailable(int column_num) { 
+			return cost_matrix_.IsColumnAvailable(column_num); 
 		}
 
 	private:
@@ -95,9 +112,6 @@ public:
 		}
 
 	private:
-		bool CellAvailable(int cell_num) const override { 
-			return cost_matrix_(cell_num, column_num_).IsAvailable();
-		}
 		int GetRow(int cell_num) const override { return cell_num; }
 		int GetColumn(int) const override { return column_num_; }
 
@@ -107,16 +121,13 @@ public:
 	class CostRow : public CostVector {
 	public:
 		CostRow(const CostMatrix& cost_matrix_, int row_num) :
-				CostVector{graph, cost_matrix_, infinite}, row_num_{row_num} {
+				CostVector{cost_matrix_}, row_num_{row_num} {
 			if (IsRowAvailable(row_num_)) {
 				throw NotAvailableError{"That row is not available"};
 			}
 		}
 
 	private:
-		bool CellAvailable(int cell_num) const override { 
-			return cost_matrix_.IsColumnAvailable(cell_num); 
-		}
 		int GetColumn(int cell_num) const override { return cell_num; }
 		int GetRow(int) const override { return row_num_; }
 
@@ -135,7 +146,11 @@ public:
 			cost_matrix_{cost_matrix}, row_num_{0}, column_num_{0} {}
 
 		CostMatrixInteger operator*() { 
-			return cost_matrix_(row_num, column_num);
+			return cost_matrix_(row_num_, column_num_);
+		}
+
+		CostMatrixInteger* operator->() {
+			return &cost_matrix_(row_num_, column_num_);
 		}
 
 		Iterator operator++(int);
@@ -160,13 +175,13 @@ public:
 
 	Iterator begin() { return Iterator{*this}; }
 	Iterator end() { 
-		return Iterator{*this, cost_matrix_.cost_matrix_.GetNumVertices()}; 
+		return Iterator{*this, cost_matrix_.size()}; 
 	}
 	
 private:
 	Matrix<CostMatrixInteger> cost_matrix_;
 	std::vector<bool> row_available_;
-	std::vector<bool> col_available_;
+	std::vector<bool> column_available_;
 };
 
 

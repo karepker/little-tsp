@@ -5,13 +5,14 @@
 #include <iostream>
 
 #include "matrix.hpp"
+#include "util.hpp"
 
 // forward declare
-class CostMatrix;  // defined in the cpp file
+class CostMatrix;
+struct CostMatrixZero;
+struct Edge;
 class Graph;
 class Path;
-
-struct Edge { int u, v; };
 
 class TreeNode {
 public:
@@ -24,11 +25,7 @@ public:
 	// Important methods
 	// add included and excluded vertices
 	void AddInclude(const Edge& e);
-	void AddExclude(const Edge& e);
-
-	// methods to deal with infinite
-	bool IsInfinite(int i, int j) const { return infinite_(i, j); };
-	void SetInfinite(int i, int j) { infinite_.SetEntry(i, j, true); };
+	void AddExclude(const Edge& e) { exclude_.push_back(e); }
 
 	// getters
 	int GetLowerBound() const { return lower_bound_; };
@@ -37,10 +34,6 @@ public:
 	bool HasExcludeBranch() const { return has_exclude_branch_; };
 	Edge GetNextEdge() const { return next_edge_; };
 	
-	// branch determination methods
-	// use the current list of includes to recalculate the lower bound and
-	// mark unavailable rows/columns that have been visited
-	void SetAvailAndLB(const Graph& graph, CostMatrix& info);
 	// calculate the lower bound and the next edge, return true if a next edge
 	// was found
 	bool CalcLBAndNextEdge(const Graph& graph);
@@ -50,6 +43,9 @@ public:
 	friend std::ostream& operator<<(std::ostream& os, const TreeNode& p);
 
 private:
+	bool HandleBaseCase(const Graph& graph, const CostMatrix& cost_matrix,
+			const CostMatrixZero& zero);
+
 	// edges that are being included and excluded
 	std::vector<Edge> include_;
 	std::vector<Edge> exclude_;

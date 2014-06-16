@@ -16,8 +16,7 @@ private:
 
 class NotAvailableError : public ImplementationError {
 public:
-	NotAvailableError(const char* msg) : msg_{msg} {}
-	const char* what() const noexcept override { return msg_; }
+	NotAvailableError(const char* msg) : ImplementationError{msg} {}
 
 private:
 	const char* msg_;
@@ -33,10 +32,13 @@ private:
 	const char* msg_;
 };
 
-/* provides a basic encapsulation of a coordinate */
+// provides a basic encapsulation of a coordinate
 struct Coordinate {
 	int x;
 	int y;
 };
+
+// a simple edge structure
+struct Edge { int u, v; };
 
 #endif  // UTIL_H

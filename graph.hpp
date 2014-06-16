@@ -4,6 +4,8 @@
 #include <iosfwd>
 #include <sstream>
 
+struct Edge;
+
 /* A simple but sufficent base graph class to give to a TSP solver. */
 class Graph {
 public:
@@ -11,6 +13,7 @@ public:
 
 	// getters and setters
 	virtual int operator()(int row, int col) const = 0;
+	virtual int operator()(const Edge& e) const = 0;
 	virtual int GetNumVertices() const = 0;
 
 	// output information about the graph

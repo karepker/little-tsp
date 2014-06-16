@@ -5,23 +5,29 @@
 #include <algorithm>
 #include <deque>
 #include <exception>
+#include <functional>
 #include <iterator>
 #include <limits>
 
 #include "graph.hpp"
+#include "little_tsp_cost_matrix.hpp"
 #include "little_tsp_cost_matrix_integer.hpp"
 #include "matrix.hpp"
 #include "path.hpp"
 #include "util.hpp"
 
 using std::back_inserter;
+using std::bind;
 using std::copy_if;
 using std::deque;
 using std::exception;
 using std::max_element;
+using std::min_element;
 using std::numeric_limits;
 using std::ostream;
 using std::pair;
+using std::plus;
+using std::placeholders::_1;
 using std::sort;
 using std::vector;
 
@@ -61,8 +67,6 @@ void TreeNode::AddInclude(const Edge& e) {
 	// make the ends of the longest subtour infinite
 	exclude_.push_back({subtour.back(), subtour.front()});
 }
-
-void TreeNode::AddExclude(const Edge& e) { exclude_.push_back(e); }
 
 // build the TSP path once it exists
 // this method will infinite loop if there is not a full path
@@ -104,6 +108,11 @@ ostream& operator<<(ostream& os, const TreeNode& p) {
 	return os;
 }
 
+struct CostMatrixZero {
+	Edge edge;
+	int penalty;
+};
+
 bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 	// create a cost matrix from information stored in the tree node, reduce it
 	// and use reduction to calculate lower bound
@@ -111,105 +120,89 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 	lower_bound_ = cost_matrix.ReduceMatrix();
 
 	// find all the zeros in the matrix
-	vector<Edge> zeros;
-	for (int row{0}; row < graph.GetNumVertrowces(); ++row) {
-		for (int column{0}; column < graph.GetNumVertcolumnces(); ++column) {
+	vector<CostMatrixZero> zeros;
+	for (int row{0}; row < graph.GetNumVertices(); ++row) {
+		for (int column{0}; column < graph.GetNumVertices(); ++column) {
 			if (!cost_matrix(row, column).IsAvailable()) { continue; }
 			if (cost_matrix(row, column)() == 0) { 
-				zeros.push_back({row, column});
+				zeros.push_back({{row, column}, 0});
 			}
 		}
 	}
 
+	// 3 cases
+	// 1. base case: 2 edges left to add
+	if (graph.GetNumVertices() - include_.size() == 2) {
+		return HandleBaseCase(graph, cost_matrix, zeros[0]);
+	}
+
 	// get a penalty associated with each zero
-	vector<int> penalties(zeros.size());
-	int counter{0};
-	for (const Edge zero : zeros) {
-		bool found_min_col{false};
-		bool found_min_row{false};
-		int min_col{infinity};
-		int min_row{infinity};
+	for (CostMatrixZero& zero : zeros) {
+		// get the penalty in the row
+		CostMatrix::CostRow cost_row{cost_matrix.GetRow(zero.edge.u)};
+		auto row_it = min_element(cost_row.begin(), cost_row.end());
 
-		// check for largest distance in row
-		for (int i = 0; i < graph.GetNumVertices(); ++i) {
-			// INVARIANT: column is always available
-			if (info.IsRowAvailable(i) && !IsInfinite(i, zero.v) && 
-					i != zero.u && graph(i, zero.v) - info.GetRowReduction(i) - 
-					info.GetColumnReduction(zero.v) < min_row) {
-				min_row = graph(i, zero.v) - info.GetRowReduction(i) - 
-					info.GetColumnReduction(zero.v);
-				found_min_row = true;
-			}
-		}
+		// get the penalty in the column
+		CostMatrix::CostColumn cost_column{cost_matrix.GetColumn(zero.edge.v)};
+		auto col_it = min_element(cost_column.begin(), cost_column.end());
 
-		// check largest distance in col
-		for (int j = 0; j < graph.GetNumVertices(); ++j) {
-			// INVARIANT: row is always available
-			if (info.IsColumnAvailable(j) && !IsInfinite(zero.u, j) && 
-					zero.v != j && graph(zero.u, j) - 
-					info.GetRowReduction(zero.u) - 
-					info.GetColumnReduction(j) < min_col) {
-				min_col = graph(zero.u, j) - info.GetRowReduction(zero.u) -
-					info.GetColumnReduction(j);
-				found_min_col = true;
-			}
-		}
-
-		// 3 cases
-		// 1. base case: 2 edges left to add
-		if (graph.GetNumVertices() - include_.size() == 2) {
-			penalties[counter++] = infinity;
-			break;
-		}
+		bool found_min_col{col_it != cost_column.end()};
+		bool found_min_row{row_it != cost_row.end()};
+		int min_col{(*col_it)()};
+		int min_row{(*row_it)()};
 
 		// 2. case when excluding the node creates a disconnected graph
-		else if (found_min_col != found_min_row && 
-				graph.GetNumVertices() - include_.size() != 2) {
+		if (found_min_col != found_min_row) {
+			assert(graph.GetNumVertices() - include_.size() != 2);
 			// we must choose this edge and cannot branch
-			next_edge_ = zero;
+			next_edge_ = zero.edge;
 			has_exclude_branch_ = false;
 			return true;
 		}
 		// 3. normal case, there is both an include and exclude branch
-		else { penalties[counter++] = min_row + min_col; }
+		else { zero.penalty = min_row + min_col; }
 	}
 
 	// set the next edge as the zero with the highest penalty
-	auto max_penalty_it = max_element(penalties.begin(), penalties.end());
-	int index(max_penalty_it - penalties.begin());
-
-	// handle the base case
-	if (graph.GetNumVertices() - include_.size() == 2) {
-		AddInclude(zeros[index]);
-		info.SetRowUnavailable(zeros[index].u);
-		info.SetColumnUnavailable(zeros[index].v);
-		int row{0};
-		int col{0};
-
-		// INVARIANT: only one valid edge left, find it
-		for (int i{0}; i < graph.GetNumVertices(); ++i) {
-			if (info.IsRowAvailable(i)) {
-				row = i;
-				break;
-			}
-		}
-		for (int j{0}; j < graph.GetNumVertices(); ++j) {
-			if (info.IsColumnAvailable(j)) {
-				col = j;
-				break;
-			}
-		}
-		AddInclude({ row, col });
-
-		// recalculate LB, i.e. the length of the TSP tour
-		SetAvailAndLB(graph, info);
-		found_lb_and_edge_ = true;
-		return false;  // no next edge, we have a complete tour
-	}
-
+	auto max_penalty_it = max_element(zeros.begin(), zeros.end(), 
+			[](CostMatrixZero& highest, CostMatrixZero& current) {
+				return highest.penalty < current.penalty;
+			});
+	
 	// for any other case, set the next edge to branch on
 	// and set the flag that calculations have been completed
-	next_edge_ = zeros[index];
+	next_edge_ = max_penalty_it->edge;
 	found_lb_and_edge_ = true;
 	return true;
+}
+
+bool TreeNode::HandleBaseCase(const Graph& graph, const CostMatrix& cost_matrix,
+		const CostMatrixZero& zero) {
+	// handle the base case
+	AddInclude(zero.edge);
+	int row{-1};
+	int col{-1};
+
+	// INVARIANT: only one valid edge left, find it
+	for (int i{0}; i < graph.GetNumVertices(); ++i) {
+		if (cost_matrix.IsRowAvailable(i) && i != zero.edge.u) {
+			row = i;
+			break;
+		}
+	}
+	for (int j{0}; j < graph.GetNumVertices(); ++j) {
+		if (cost_matrix.IsColumnAvailable(j) && j != zero.edge.v) {
+			col = j;
+			break;
+		}
+	}
+	assert(row != -1 && col != -1);
+	AddInclude({ row, col });
+
+	// recalculate LB, i.e. the length of the TSP tour
+	lower_bound_ = accumulate(include_.begin(), include_.end(), 
+			bind(&plus<int>, _1, bind(&Graph::operator(), graph, _1));
+
+	found_lb_and_edge_ = true;
+	return false;  // no next edge, we have a complete tour
 }

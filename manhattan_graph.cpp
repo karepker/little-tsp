@@ -18,22 +18,16 @@ ManhattanGraph::ManhattanGraph(istream& input = cin)
 	int line_num{0};
 
 	// read the map in
-	while (true)
-	{
+	while (true) {
 		// if its the first line, get the number of vertices
-		if (line_num == 0)
-		{
+		if (line_num == 0) {
 			input >> world_size_;
 			if (!input) { throw Error{"Couldn't read the world size"}; }
-		}
-		else if (line_num == 1)
-		{
+		} else if (line_num == 1) {
 			input >> num_vertices_;
 			if (!input) { throw Error{"Couldn't read number of vertices"}; }
-		}
+		} else {
 		// otherwise, get the coordinates
-		else
-		{
 			int coord1, coord2;
 			// first is x coordinate, second is y coordinate
 			input >> coord1 >> coord2;
@@ -51,18 +45,14 @@ ManhattanGraph::ManhattanGraph(istream& input = cin)
 }
 
 int ManhattanGraph::operator()(int from, int to) const {
-	if (from < 0 || from > num_vertices_ || to < 0 || to > num_vertices_) {
-		stringstream msg;
-		msg << "Bad from or toumn provided: (" << from << ", " << to << 
-			") limit is: " << num_vertices_ << endl;
-		throw ImplementationError{msg.str().c_str()};
-	}
-	return abs(vertices_[from].x - vertices_[to].x) + 
-		abs(vertices_[from].y - vertices_[to].y);
+	return GetEdgeWeight(from, to);
 }
 
-string ManhattanGraph::Describe() const
-{
+int ManhattanGraph::operator()(const Edge& e) const {
+	return GetEdgeWeight(e.u, e.v);
+}
+
+string ManhattanGraph::Describe() const {
 	stringstream ss;
 
 	// print information about the word
@@ -81,4 +71,15 @@ string ManhattanGraph::Describe() const
 		ss << endl;
 	}
 	return ss.str();
+}
+
+int ManhattanGraph::GetEdgeWeight(int from, int to) const {
+	if (from < 0 || from > num_vertices_ || to < 0 || to > num_vertices_) {
+		stringstream msg;
+		msg << "Bad from or to provided: (" << from << ", " << to << 
+			") limit is: " << num_vertices_ << endl;
+		throw ImplementationError{msg.str().c_str()};
+	}
+	return abs(vertices_[from].x - vertices_[to].x) + 
+		abs(vertices_[from].y - vertices_[to].y);
 }

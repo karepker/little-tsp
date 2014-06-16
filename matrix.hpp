@@ -2,6 +2,7 @@
 #define MATRIX_H
 
 #include <vector>
+#include <utility>
 
 template <class T>
 class Matrix {
@@ -27,7 +28,9 @@ public:
 	void SetEntry(int row, int col, T value)
 	{ entries_[row * rows_ + col] = value; }
 
-	int size() { return rows_; }
+	std::pair<int, int> size() const {
+		return std::make_pair(rows_, entries_.size() / rows_); 
+	}
 
 private:
 	int rows_;

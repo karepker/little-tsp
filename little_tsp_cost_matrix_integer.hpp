@@ -12,10 +12,11 @@
 class CostMatrixInteger {
 public:
 	CostMatrixInteger(int value);
+	CostMatrixInteger(bool infinite, bool available);
 	CostMatrixInteger(int value, bool infinite, bool available);
 
-	void SetInfinite() { infinite_{true}; }
-	void SetUnavailable() { available_{false}; }
+	void SetInfinite() { infinite_ = true; }
+	void SetUnavailable() { available_ = false; }
 
 	int operator()() const;
 	bool IsAvailable() const { return available_; }
@@ -34,7 +35,7 @@ public:
 private:
 	// makes sure this CostMatrixInteger and the other CostMatrix integer are
 	// available so operations can be performed on them. Throws error if not
-	void CheckAvailability(CostMatrixInteger other);
+	void CheckAvailability(CostMatrixInteger other) const;
 
 	int value_;
 	bool infinite_;

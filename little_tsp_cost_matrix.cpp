@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 
+#include "little_tsp_cost_matrix_integer.hpp"
 #include "matrix.hpp"
 #include "graph.hpp"
 
@@ -45,6 +46,7 @@ CostMatrix::CostMatrix(const Graph& graph, const vector<Edge>& include,
 }
 
 int CostMatrix::ReduceMatrix() {
+	// keep track of the amount reduced off the matrix
 	int decremented{0};
 
 	// reduce all the rows
@@ -74,6 +76,18 @@ int CostMatrix::ReduceMatrix() {
 	return decremented;
 }
 
+int CostMatrix::operator()(int row_num, int column_num) const {
+	cost_matrix_(row_num, column_num);
+}
+
+CostRow CostMatrix::GetRow(int row_num) const { 
+	return CostRow{*this, row_num};
+}
+
+CostColumn CostMatrix::GetColumn(int column_num) const { 
+	return CostColumn{*this, column_num};
+}
+
 int CostMatrix::CostVector::operator[](int cell_num) const {
 	int row_num{GetRow(cell_num)};
 	int column_num{GetColumn(cell_num)};
@@ -82,14 +96,14 @@ int CostMatrix::CostVector::operator[](int cell_num) const {
 
 CostVectorIterator CostVectorIterator::operator++(int) {
 	int current_traversing_cell_num{traversing_cell_num_};
-	int vector_size{cost_vector_.cost_matrix.cost_matrix_.GetNumVertices()};
+	int vector_size{cost_vector_.cost_matrix.size()};
 	while (++traversing_cell_num < vector_size &&
 			!cost_vector_.CellAvailable(++traversing_cell_num_));
 	return Iterator{cost_vector_, current_traversing_cell_num};
 }
 
 CostVectorIterator& CostVectorIterator::operator++() {
-	int vector_size{cost_vector_.cost_matrix.cost_matrix_.GetNumVertices()};
+	int vector_size{cost_vector_.cost_matrix_.size()};
 	while (++traversing_cell_num < vector_size &&
 			!cost_vector_.CellAvailable(traversing_cell_num_));
 	return *this;
@@ -130,13 +144,13 @@ bool CostMatrixIterator::operator!=(CostMatrixIterator& other) {
 
 bool CostMatrixIterator::MoveToNextCell() {
 	// check if the iterator is already in the end state
-	if (row_num_ == cost_matrix_.cost_matrix_.GetNumVertices() && 
+	if (row_num_ == cost_matrix_.size() && 
 			column_num_ == 0) {
 		return false;
 	}
 	++column_num_;
-	if (column_num_ == cost_matrix_.cost_matrix_.GetNumVertices()) {
-		if (++row_num == cost_matrix_.cost_matrix_.GetNumVertices()) {
+	if (column_num_ == cost_matrix_.size()) {
+		if (++row_num == cost_matrix_.size()) {
 			return false;
 		}
 		column_num_ = 0;
