@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "matrix.hpp"
+#include "little_tsp_cost_matrix_integer.hpp"
 
 class Graph;
 class CostMatrixInteger;
@@ -18,10 +19,11 @@ public:
 
 	int ReduceMatrix();
 
-	CostMatrixInteger operator()(int row_num, int column_num) const;
+	const CostMatrixInteger& operator()(int row_num, int column_num) const;
+	CostMatrixInteger& operator()(int row_num, int column_num);
 
 	bool IsRowAvailable(int row_num) const { return row_available_[row_num]; }
-	bool IsColumnAvailable(int column_num) const { 
+	bool IsColumnAvailable(int column_num) const {
 		return column_available_[column_num]; 
 	}
 	int size() const { return cost_matrix_.size().first; }
@@ -33,17 +35,17 @@ public:
 	// are very intimately related
 	friend class CostVector;
 
-	CostRow GetRow(int row_num) const;
-	CostColumn GetColumn(int column_num) const;
+	CostRow GetRow(int row_num);
+	CostColumn GetColumn(int column_num);
 
 	// encapsulation of cost information about either a single row or a column
 	// defines iterator which allows easier traversal and more use of STL
 	class CostVector {
 	public:
-		CostVector(const Matrix<CostMatrixInteger>& cost_matrix) :
-				cost_matrix_{cost_matrix} {}
+		CostVector(CostMatrix& cost_matrix) : cost_matrix_{cost_matrix} {}
 
-		int operator[](int cell_num) const;
+		const CostMatrixInteger& operator[](int cell_num) const;
+		CostMatrixInteger& operator[](int cell_num);
 
 		// we need access to the protected interface in cost vector and the
 		// subscripting operation
@@ -52,37 +54,35 @@ public:
 
 		class Iterator {
 		public:
-			Iterator(const CostVector& cost_vector) :
+			Iterator(CostVector& cost_vector) :
 				cost_vector_{cost_vector}, traversing_cell_index_{0} {}
 
-			CostMatrixInteger operator*() { 
+			CostMatrixInteger& operator*() { 
 				return cost_vector_[traversing_cell_index_]; 
 			}
 
-			CostMatrixInteger* operator*() { 
+			CostMatrixInteger* operator->() { 
 				return &cost_vector_[traversing_cell_index_]; 
 			}
 
 			Iterator operator++(int);
 			Iterator& operator++();
 
-			bool operator==(Iterator& other);
-			bool operator!=(Iterator& other);
+			bool operator==(const Iterator& other) const;
+			bool operator!=(const Iterator& other) const;
 
 			friend class CostVector;
 
 		private:
-			Iterator(const CostVector& cost_vector, int cell_num) :
+			Iterator(CostVector& cost_vector, int cell_num) :
 				cost_vector_{cost_vector}, traversing_cell_index_{cell_num} {}
 
-			const CostVector& cost_vector_;
+			CostVector& cost_vector_;
 			int traversing_cell_index_;  // changes as iterator moves
 		};
 
 		Iterator begin() { return Iterator{*this}; }
-		Iterator end() { 
-			return Iterator{*this, cost_matrix_.cost_matrix_.size()}; 
-		}
+		Iterator end() { return Iterator{*this, cost_matrix_.size()}; }
 
 	protected:
 		// define interface for derived classes because CostVector doesn't know
@@ -91,25 +91,21 @@ public:
 		virtual int GetColumn(int cell_num) const = 0;
 
 		bool IsRowAvailable(int row_num) { 
-			return cost_matrix_.IsRowAvaiable(row_num); 
+			return cost_matrix_.IsRowAvailable(row_num); 
 		}
 		bool IsColumnAvailable(int column_num) { 
 			return cost_matrix_.IsColumnAvailable(column_num); 
 		}
 
 	private:
+		bool IsCellAvailable(int cell_num) const;
+
 		const CostMatrix& cost_matrix_;
 	};
 
 	class CostColumn : public CostVector {
 	public:
-		CostColumn(const Matrix<CostMatrixInteger>& cost_matrix, 
-				int column_num) : CostVector{cost_matrix}, 
-				column_num_{column_num} {
-			if (IsColumnAvailable(column_num_)) {
-				throw NotAvailableError{"That column is not available"};
-			}
-		}
+		CostColumn(CostMatrix& cost_matrix, int column_num);
 
 	private:
 		int GetRow(int cell_num) const override { return cell_num; }
@@ -120,12 +116,7 @@ public:
 
 	class CostRow : public CostVector {
 	public:
-		CostRow(const CostMatrix& cost_matrix_, int row_num) :
-				CostVector{cost_matrix_}, row_num_{row_num} {
-			if (IsRowAvailable(row_num_)) {
-				throw NotAvailableError{"That row is not available"};
-			}
-		}
+		CostRow(CostMatrix& cost_matrix, int row_num);
 
 	private:
 		int GetColumn(int cell_num) const override { return cell_num; }
@@ -142,7 +133,7 @@ public:
 	// iterator for iterating over all cells in the cost matrix
 	class Iterator {
 	public:
-		Iterator(const CostMatrix& cost_matrix) :
+		Iterator(CostMatrix& cost_matrix) :
 			cost_matrix_{cost_matrix}, row_num_{0}, column_num_{0} {}
 
 		CostMatrixInteger operator*() { 
@@ -162,21 +153,19 @@ public:
 		friend class CostMatrix;
 
 	private:
-		Iterator(const CostMatrix& cost_matrix, int row_num, int column_num) :
+		Iterator(CostMatrix& cost_matrix, int row_num, int column_num) :
 			cost_matrix_{cost_matrix}, row_num_{row_num}, 
 			column_num_{column_num} {}
 
-		void MoveToNextCell();
+		bool MoveToNextCell();
 
-		const CostMatrix& cost_matrix_;
+		CostMatrix& cost_matrix_;
 		int row_num_;  // changes as iterator moves
 		int column_num_;  // changes as iterator moves
 	};
 
 	Iterator begin() { return Iterator{*this}; }
-	Iterator end() { 
-		return Iterator{*this, cost_matrix_.size()}; 
-	}
+	Iterator end() { return Iterator{*this, size(), 0}; }
 	
 private:
 	Matrix<CostMatrixInteger> cost_matrix_;
