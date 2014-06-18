@@ -6,6 +6,8 @@ using std::numeric_limits;
 
 const int infinity{numeric_limits<int>::max()};
 
+CostMatrixInteger::CostMatrixInteger() : CostMatrixInteger{-1} {}
+
 CostMatrixInteger::CostMatrixInteger(int value) : value_{value}, 
 	infinite_{false}, available_{false} {}
 

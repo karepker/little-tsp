@@ -11,7 +11,8 @@
  */
 class CostMatrixInteger {
 public:
-	CostMatrixInteger(int value);
+	CostMatrixInteger();
+	explicit CostMatrixInteger(int value);
 	CostMatrixInteger(bool infinite, bool available);
 	CostMatrixInteger(int value, bool infinite, bool available);
 

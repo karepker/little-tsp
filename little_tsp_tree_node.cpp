@@ -33,8 +33,17 @@ using std::vector;
 
 const int infinity{numeric_limits<int>::max()};
 
-TreeNode::TreeNode(const TreeNode& old, Edge e, bool inc) : TreeNode{old}
-	{ inc ? AddInclude(e) : AddExclude(e); }
+TreeNode::TreeNode(const Graph& graph) : next_edge_{-1, -1}, 
+		found_lb_and_edge_{false}, has_exclude_branch_{false}, lower_bound_{0} {
+	// exclude all cells along the diagonal, we don't want self-loops
+	for (int diag{0}; diag < graph.GetNumVertices(); ++diag) {
+		exclude_.push_back({diag, diag});
+	}
+}
+
+TreeNode::TreeNode(const TreeNode& old, Edge e, bool inc) : TreeNode{old} { 
+	inc ? AddInclude(e) : AddExclude(e); 
+}
 
 void TreeNode::AddInclude(const Edge& e) {
 	// find the largest subtour involving the edge to add
@@ -133,6 +142,7 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 	// 3 cases
 	// 1. base case: 2 edges left to add
 	if (graph.GetNumVertices() - include_.size() == 2) {
+		assert(!zeros.empty());
 		return HandleBaseCase(graph, cost_matrix, zeros[0]);
 	}
 
@@ -200,8 +210,8 @@ bool TreeNode::HandleBaseCase(const Graph& graph, const CostMatrix& cost_matrix,
 	AddInclude({ row, col });
 
 	// recalculate LB, i.e. the length of the TSP tour
-	lower_bound_ = accumulate(include_.begin(), include_.end(), 
-			bind(&plus<int>, _1, bind(&Graph::operator(), graph, _1));
+	lower_bound_ = accumulate(include_.begin(), include_.end(), 0, 
+			[&graph](int current_lb, Edge e) { return current_lb + graph(e); });
 
 	found_lb_and_edge_ = true;
 	return false;  // no next edge, we have a complete tour
