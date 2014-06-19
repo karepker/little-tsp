@@ -1,7 +1,9 @@
-littletsp
-littletspd
 build/*
-test/*.txt
-*.swp
+*CMakeCXXCompilerId.cpp
+CMakeFiles
+cmake_install.cmake
 .fuse_hidden*
+*Makefile
 *__pycache__
+*.swp
+test/*.txt
