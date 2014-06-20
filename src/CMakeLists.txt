@@ -1,9 +1,3 @@
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
-set(CXXFLAGS "-Wall -Werror -std=c++11")
-set(CXXFLAGS_RELEASE "${CXXFLAGS} -O3")
-set(CXXFLAGS_DEBUG "${CXXFLAGS} -g -O0")
-
 set(SRCS 
 	fast_tsp_solver.cpp
 	graph.cpp
@@ -20,8 +14,13 @@ set(SRCS
 	naive_tsp_solver.cpp
 	path.cpp)
 
-add_executable(littletspd ${SRCS})
-add_executable(littletsp ${SRCS})
+set(DEBUG_BINARY "littletspd")
+set(RELEASE_BINARY "littletsp")
 
-set_target_properties(littletspd PROPERTIES COMPILE_FLAGS "${CXXFLAGS_DEBUG}")
-set_target_properties(littletsp PROPERTIES COMPILE_FLAGS "${CXXFLAGS_RELEASE}")
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+add_executable(${DEBUG_BINARY} ${SRCS})
+add_executable(${RELEASE_BINARY} ${SRCS})
+
+set_target_properties(${DEBUG_BINARY} PROPERTIES COMPILE_FLAGS "${CXXFLAGS_DEBUG}")
+set_target_properties(${RELEASE_BINARY} PROPERTIES COMPILE_FLAGS "${CXXFLAGS_RELEASE}")
