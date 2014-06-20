@@ -1,9 +1,9 @@
-#include "fast_tsp_solver.hpp"
+#include "tsp_solver/fast_tsp_solver.hpp"
 
 #include <unordered_set>
 #include <algorithm>
 
-#include "graph.hpp"
+#include "graph/graph.hpp"
 #include "path.hpp"
 
 using std::vector;

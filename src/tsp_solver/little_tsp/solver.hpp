@@ -1,7 +1,7 @@
 #ifndef LITTLE_TSP_SOLVER_H
 #define LITTLE_TSP_SOLVER_H
 
-#include "tsp_solver.hpp"
+#include "tsp_solver/tsp_solver.hpp"
 
 /* Solves the TSP using the optimal algorithm described by Little et. al */
 class LittleTSPSolver : public TSPSolver {

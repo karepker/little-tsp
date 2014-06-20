@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "matrix.hpp"
-#include "little_tsp_cost_matrix_integer.hpp"
+#include "tsp_solver/little_tsp/cost_matrix_integer.hpp"
 
 class Graph;
 class CostMatrixInteger;

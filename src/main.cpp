@@ -5,12 +5,12 @@
 #include <iostream>
 #include <memory>
 
-#include "graph_factory.hpp"
-#include "graph.hpp"
+#include "graph/factory.hpp"
+#include "graph/graph.hpp"
 #include "interaction.hpp"
 #include "path.hpp"
-#include "tsp_solver_factory.hpp"
-#include "tsp_solver.hpp"
+#include "tsp_solver/factory.hpp"
+#include "tsp_solver/tsp_solver.hpp"
 #include "util.hpp"
 
 using std::cin;

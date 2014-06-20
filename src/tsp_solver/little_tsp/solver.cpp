@@ -1,13 +1,13 @@
-#include "little_tsp_solver.hpp"
+#include "tsp_solver/little_tsp/solver.hpp"
 
 #include <limits>
 #include <stack>
 
 #include <cassert>
 
-#include "graph.hpp"
-#include "little_tsp_tree_node.hpp"
+#include "graph/graph.hpp"
 #include "path.hpp"
+#include "tsp_solver/little_tsp/tree_node.hpp"
 
 using std::stack;
 using std::numeric_limits;

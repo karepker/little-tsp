@@ -1,13 +1,13 @@
-#include "little_tsp_cost_matrix.hpp"
+#include "tsp_solver/little_tsp/cost_matrix.hpp"
 
 #include <cassert>
 
 #include <vector>
 #include <algorithm>
 
-#include "little_tsp_cost_matrix_integer.hpp"
+#include "graph/graph.hpp"
 #include "matrix.hpp"
-#include "graph.hpp"
+#include "tsp_solver/little_tsp/cost_matrix_integer.hpp"
 
 using std::for_each;
 using std::min_element;

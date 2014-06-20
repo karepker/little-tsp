@@ -1,11 +1,11 @@
-#include "graph_factory.hpp"
+#include "graph/factory.hpp"
 
 #include <iostream>
 #include <memory>
 #include <string>
 
-#include "graph.hpp"
-#include "manhattan_graph.hpp"
+#include "graph/graph.hpp"
+#include "graph/manhattan.hpp"
 #include "util.hpp"
 
 using std::cin;

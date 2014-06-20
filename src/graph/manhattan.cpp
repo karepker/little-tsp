@@ -1,4 +1,4 @@
-#include "manhattan_graph.hpp"
+#include "graph/manhattan.hpp"
 
 #include <iostream>
 #include <string>

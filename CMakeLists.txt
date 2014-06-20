@@ -16,13 +16,3 @@ add_subdirectory(${SOURCE_DIR})
 
 # Unit testing with Google Test
 option(unit_tests "Build littletsp's unit tests" OFF)
-if (unit_tests)
-	if (NOT EXISTS "${GTEST_ROOT}")
-		message("'${GTEST_ROOT}' does not exist, please set the GTEST_ROOT
-		variable to the appropriate directory")
-		return()
-	endif()
-	add_subdirectory(${UNITTEST_DIR})
-	# add binaries of google test to the google test root
-	add_subdirectory("${GTEST_ROOT}" "${GTEST_ROOT}")
-endif()

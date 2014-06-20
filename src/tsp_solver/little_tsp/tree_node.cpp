@@ -1,4 +1,4 @@
-#include "little_tsp_tree_node.hpp"
+#include "tsp_solver/little_tsp/tree_node.hpp"
 
 #include <cassert>
 
@@ -9,11 +9,11 @@
 #include <iterator>
 #include <limits>
 
-#include "graph.hpp"
-#include "little_tsp_cost_matrix.hpp"
-#include "little_tsp_cost_matrix_integer.hpp"
+#include "graph/graph.hpp"
 #include "matrix.hpp"
 #include "path.hpp"
+#include "tsp_solver/little_tsp/cost_matrix.hpp"
+#include "tsp_solver/little_tsp/cost_matrix_integer.hpp"
 #include "util.hpp"
 
 using std::back_inserter;

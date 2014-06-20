@@ -1,12 +1,12 @@
-#include "tsp_solver_factory.hpp"
+#include "tsp_solver/factory.hpp"
 
 #include <string>
 #include <memory>
 
-#include "tsp_solver.hpp"
-#include "naive_tsp_solver.hpp"
-#include "little_tsp_solver.hpp"
-#include "fast_tsp_solver.hpp"
+#include "tsp_solver/tsp_solver.hpp"
+#include "tsp_solver/naive_tsp_solver.hpp"
+#include "tsp_solver/little_tsp/solver.hpp"
+#include "tsp_solver/fast_tsp_solver.hpp"
 #include "util.hpp"
 
 using std::string;
