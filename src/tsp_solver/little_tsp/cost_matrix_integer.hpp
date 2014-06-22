@@ -11,25 +11,31 @@
  */
 class CostMatrixInteger {
 public:
+	// default construction is non-available
 	CostMatrixInteger();
+	// creates an available, finite integer with the given value
 	explicit CostMatrixInteger(int value);
+	// creates an integer with value -1, typically should be used only when
+	// integer is infinite or not available
 	CostMatrixInteger(bool infinite, bool available);
+	// allows control of all three parameters
 	CostMatrixInteger(int value, bool infinite, bool available);
 
-	void SetInfinite() { infinite_ = true; }
+	void SetInfinite();
 	void SetUnavailable() { available_ = false; }
 
+	// returns the value, throws an error if not available
 	int operator()() const;
 	bool IsAvailable() const { return available_; }
-	bool IsInfinite() const { return infinite_; }
+	bool IsInfinite() const;
 
 	// A whole bunch of overloaded operators. These try and follow the rules of
 	// math when an integer is infinite, and throw an error if its not available
-	CostMatrixInteger operator-(CostMatrixInteger other) const;
 	CostMatrixInteger operator+(CostMatrixInteger other) const;
+	CostMatrixInteger operator-(CostMatrixInteger other) const;
 
 	CostMatrixInteger& operator+=(CostMatrixInteger incrementer);
-	CostMatrixInteger& operator-=(CostMatrixInteger incrementer);
+	CostMatrixInteger& operator-=(CostMatrixInteger decrementer);
 
 	bool operator<(CostMatrixInteger other) const;
 

@@ -6,10 +6,11 @@ using std::numeric_limits;
 
 const int infinity{numeric_limits<int>::max()};
 
-CostMatrixInteger::CostMatrixInteger() : CostMatrixInteger{-1} {}
+CostMatrixInteger::CostMatrixInteger() : value_{-1}, infinite_{false},
+	available_{false} {}
 
 CostMatrixInteger::CostMatrixInteger(int value) : value_{value}, 
-	infinite_{false}, available_{false} {}
+	infinite_{false}, available_{true} {}
 
 CostMatrixInteger::CostMatrixInteger(bool infinite, bool available) :
 	value_{-1}, infinite_{infinite}, available_{available} {}
@@ -17,15 +18,25 @@ CostMatrixInteger::CostMatrixInteger(bool infinite, bool available) :
 CostMatrixInteger::CostMatrixInteger(int value, bool infinite, bool available) :
 	value_{value}, infinite_{infinite}, available_{available} {}
 
+void CostMatrixInteger::SetInfinite() {
+	if (!available_) { throw NotAvailableError{"Integer is not available"}; }
+	infinite_ = true;
+}
+
 int CostMatrixInteger::operator()() const {
 	if (!available_) { throw NotAvailableError{"Integer is not available"}; }
 	if (infinite_) { return infinity; }
 	return value_;
 }
 
+bool CostMatrixInteger::IsInfinite() const {
+	if (!available_) { throw NotAvailableError{"Integer is not available"}; }
+	return infinite_;
+}
+
 CostMatrixInteger CostMatrixInteger::operator-(CostMatrixInteger other) const {
 	CheckAvailability(other);
-	if (infinite_) { return CostMatrixInteger{true, false}; }
+	if (infinite_) { return CostMatrixInteger{true, true}; }
 	if (other.infinite_) {
 		throw ImplementationError{"Should not be subtracting infinite value!"};
 	}
@@ -36,7 +47,7 @@ CostMatrixInteger CostMatrixInteger::operator-(CostMatrixInteger other) const {
 
 CostMatrixInteger CostMatrixInteger::operator+(CostMatrixInteger other) const {
 	CheckAvailability(other);
-	if (infinite_ || other.infinite_) { return CostMatrixInteger{true, false}; }
+	if (infinite_ || other.infinite_) { return CostMatrixInteger{true, true}; }
 	return CostMatrixInteger(value_ + other.value_);
 }
 
