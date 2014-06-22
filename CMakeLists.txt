@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8.8)  # for object libraries
 project (littletsp)
 
 # set some locations
