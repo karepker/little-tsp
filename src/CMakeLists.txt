@@ -16,7 +16,8 @@ set(SRCS
 set(MAIN_SRC main.cpp)
 
 set(UNITTEST_SRCS
-	tsp_solver/little_tsp/cost_matrix_integer_test.cpp)
+	tsp_solver/little_tsp/cost_matrix_integer_test.cpp
+	tsp_solver/little_tsp/cost_matrix_test.cpp)
 
 set(DEBUG_OBJECT_LIBRARY "debug_objects")
 set(DEBUG_BINARY "littletspd")
@@ -37,25 +38,28 @@ set_target_properties(${DEBUG_BINARY} PROPERTIES COMPILE_FLAGS "${CXXFLAGS_DEBUG
 set_target_properties(${RELEASE_BINARY} PROPERTIES COMPILE_FLAGS "${CXXFLAGS_RELEASE}")
 
 if (unit_tests)
-	if (NOT EXISTS "${GTEST_ROOT}")
-		message("'${GTEST_ROOT}' does not exist, please set the GTEST_ROOT
+	if (NOT EXISTS "${GMOCK_ROOT}")
+		message("'${GMOCK_ROOT}' does not exist, please set the GMOCK_ROOT
 		variable to the appropriate directory")
 		return()
 	endif()
-	# add binaries of google test to the google test root
-	add_subdirectory("${GTEST_ROOT}" "${GTEST_ROOT}")
+
+	# add binaries of google test and google mock to their their roots
+	add_subdirectory("${GMOCK_ROOT}" "${GMOCK_ROOT}")
 
 	include_directories(
-		${GTEST_ROOT}/include
-		${GTEST_ROOT})
+		${GMOCK_ROOT}/gtest
+		${GMOCK_ROOT}/gtest/include
+		${GMOCK_ROOT}
+		${GMOCK_ROOT}/include)
 
-	add_executable(${UNITTEST_BINARY} 
-		${UNITTEST_SRCS} 
+	add_executable(${UNITTEST_BINARY}
+		${UNITTEST_SRCS}
 		$<TARGET_OBJECTS:${DEBUG_OBJECT_LIBRARY}>)
 
 	set_target_properties(${UNITTEST_BINARY} PROPERTIES COMPILE_FLAGS "${CXXFLAGS_DEBUG}")
 	target_link_libraries(${UNITTEST_BINARY} 
-		gtest_main
+		gmock_main
 		pthread)
 
 endif()
