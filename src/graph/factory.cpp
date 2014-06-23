@@ -17,6 +17,6 @@ const string manhattan_graph_type_c{"manhattan"};
 
 unique_ptr<Graph> CreateGraph(const string& type, istream& input = cin) {
 	if (type == manhattan_graph_type_c) 
-		{ return unique_ptr<Graph>{new ManhattanGraph{input}}; }
+	{ return unique_ptr<Graph>{new ManhattanGraph{input}}; }
 	throw Error{"Not a valid graph type!"};
 }

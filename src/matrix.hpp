@@ -1,8 +1,9 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 
+#include <cassert>
+
 #include <vector>
-#include <utility>
 
 template <class T>
 class Matrix {
@@ -11,6 +12,10 @@ public:
 	Matrix(int rows, int cols) : rows_{rows}, entries_(rows * cols) {}
 	Matrix(int rows, int cols, T initial_value) : rows_{rows}, 
 		entries_(rows * cols, initial_value) {}
+	Matrix(int rows, std::vector<T> entries) : rows_{rows}, entries_{entries} {
+		// size of entries must be rows_ * <integer value>
+		assert(entries_.size() % rows == 0);
+	}
 
 	void SetEntries(int rows, int cols) { 
 		rows_ = rows;
@@ -23,9 +28,8 @@ public:
 		return entries_[row * rows_ + col]; 
 	}
 
-	std::pair<int, int> size() const {
-		return std::make_pair(rows_, entries_.size() / rows_); 
-	}
+	int GetNumRows() const { return rows_; }
+	int GetNumColumns() const { return entries_.size() / rows_; }
 
 private:
 	int rows_;

@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "matrix.hpp"
-#include "tsp_solver/little_tsp/cost_matrix_integer.hpp"
 
 class Graph;
 class CostMatrixInteger;
@@ -26,7 +25,7 @@ public:
 	bool IsColumnAvailable(int column_num) const {
 		return column_available_[column_num]; 
 	}
-	int size() const { return cost_matrix_.size().first; }
+	int size() const { return cost_matrix_.GetNumRows(); }
 
 	class CostVector;
 	class CostRow; 
@@ -136,13 +135,9 @@ public:
 		explicit Iterator(CostMatrix* cost_matrix) :
 			cost_matrix_{cost_matrix}, row_num_{0}, column_num_{0} {}
 
-		CostMatrixInteger operator*() { 
-			return (*cost_matrix_)(row_num_, column_num_);
-		}
+		CostMatrixInteger operator*();
 
-		CostMatrixInteger* operator->() {
-			return &(*cost_matrix_)(row_num_, column_num_);
-		}
+		CostMatrixInteger* operator->();
 
 		Iterator operator++(int);
 		Iterator& operator++();

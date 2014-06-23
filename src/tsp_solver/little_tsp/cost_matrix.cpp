@@ -20,8 +20,8 @@ using CostColumn = CostMatrix::CostColumn;
 CostMatrix::CostMatrix(const Graph& graph, const vector<Edge>& include, 
 		const vector<Edge>& exclude) :
 		cost_matrix_{graph.GetNumVertices(), graph.GetNumVertices()},
-		row_available_(graph.GetNumVertices()), 
-		column_available_(graph.GetNumVertices()) {
+		row_available_(graph.GetNumVertices(), true), 
+		column_available_(graph.GetNumVertices(), true) {
 	// set initial values of cells
 	for (int i{0}; i < graph.GetNumVertices(); ++i) {
 		for (int j{0}; j < graph.GetNumVertices(); ++j) {
@@ -34,10 +34,10 @@ CostMatrix::CostMatrix(const Graph& graph, const vector<Edge>& include,
 		row_available_[e.u] = false;
 		column_available_[e.v] = false;
 		for (int i{0}; i < graph.GetNumVertices(); ++i) {
-			cost_matrix_(e.u, i).SetInfinite();
+			cost_matrix_(e.u, i).SetUnavailable();
 		}
 		for (int i{0}; i < graph.GetNumVertices(); ++i) {
-			cost_matrix_(i, e.v).SetInfinite();
+			cost_matrix_(i, e.v).SetUnavailable();
 		}
 	}
 
@@ -138,16 +138,24 @@ bool CostVector::Iterator::operator!=(const CostVector::Iterator& other) const {
 
 CostColumn::CostColumn(CostMatrix* cost_matrix, int column_num) : 
 		CostVector{cost_matrix}, column_num_{column_num} {
-	if (IsColumnAvailable(column_num_)) {
+	if (!IsColumnAvailable(column_num_)) {
 		throw NotAvailableError{"That column is not available"};
 	}
 }
 
 CostRow::CostRow(CostMatrix* cost_matrix_, int row_num) :
 		CostVector{cost_matrix_}, row_num_{row_num} {
-	if (IsRowAvailable(row_num_)) {
+	if (!IsRowAvailable(row_num_)) {
 		throw NotAvailableError{"That row is not available"};
 	}
+}
+
+CostMatrixInteger CostMatrix::Iterator::operator*() { 
+	return (*cost_matrix_)(row_num_, column_num_);
+}
+
+CostMatrixInteger* CostMatrix::Iterator::operator->() {
+	return &(*cost_matrix_)(row_num_, column_num_);
 }
 
 CostMatrix::Iterator CostMatrix::Iterator::operator++(int) {

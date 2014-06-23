@@ -2,7 +2,6 @@
 #define GRAPH_H
 
 #include <iosfwd>
-#include <sstream>
 
 struct Edge;
 
