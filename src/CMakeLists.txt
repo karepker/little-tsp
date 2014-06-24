@@ -1,4 +1,5 @@
 set(SRCS 
+	edge.cpp
 	graph/factory.cpp
 	graph/graph.cpp
 	graph/manhattan.cpp
@@ -17,7 +18,8 @@ set(MAIN_SRC main.cpp)
 
 set(UNITTEST_SRCS
 	tsp_solver/little_tsp/cost_matrix_integer_test.cpp
-	tsp_solver/little_tsp/cost_matrix_test.cpp)
+	tsp_solver/little_tsp/cost_matrix_test.cpp
+	tsp_solver/little_tsp/tree_node_test.cpp)
 
 set(DEBUG_OBJECT_LIBRARY "debug_objects")
 set(DEBUG_BINARY "littletspd")

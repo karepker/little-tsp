@@ -1,16 +1,15 @@
-#ifndef LITTLE_TSP_TREE_NODE_H
-#define LITTLE_TSP_TREE_NODE_H
+#ifndef TSP_SOLVER_LITTLE_TSP_TREE_NODE_H
+#define TSP_SOLVER_LITTLE_TSP_TREE_NODE_H
 
 #include <vector>
 #include <iostream>
 
 #include "matrix.hpp"
-#include "util.hpp"
+#include "edge.hpp"
 
 // forward declare
 class CostMatrix;
 struct CostMatrixZero;
-struct Edge;
 class Graph;
 class Path;
 
@@ -19,8 +18,6 @@ public:
 	// some constructors
 	TreeNode();
 	explicit TreeNode(const Graph& costs);
-	// copy constructor
-	TreeNode(const TreeNode& old, Edge e, bool inc);
 
 	// Important methods
 	// add included and excluded vertices
@@ -59,4 +56,4 @@ private:
 	int lower_bound_;
 };
 
-#endif  // LITTLE_TSP_TREE_NODE_H
+#endif  // TSP_SOLVER_LITTLE_TSP_TREE_NODE_H

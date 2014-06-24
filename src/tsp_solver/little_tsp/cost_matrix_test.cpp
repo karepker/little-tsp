@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "cost_matrix_integer.hpp"
+#include "edge.hpp"
 #include "graph/mock.hpp"
 #include "util.hpp"
 #include "matrix.hpp"
@@ -27,7 +28,7 @@ const int infinity{numeric_limits<int>::max()};
 const vector<Edge> include1;
 const vector<Edge> exclude1{{0, 0}};
 const vector<Edge> include2{{1, 2}};
-const vector<Edge> exclude2{};
+const vector<Edge> exclude2{{1, 0}};
 
 const Matrix<int> graph_weights{3, {6, 2, 4, 4, 5, 3, 8, 9, 7}};
 

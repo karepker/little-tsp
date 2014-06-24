@@ -1,5 +1,5 @@
-#ifndef LITTLE_TSP_SOLVER_H
-#define LITTLE_TSP_SOLVER_H
+#ifndef TSP_SOLVER_LITTLE_TSP_SOLVER_H
+#define TSP_SOLVER_LITTLE_TSP_SOLVER_H
 
 #include "tsp_solver/tsp_solver.hpp"
 
@@ -12,4 +12,4 @@ public:
 	Path Solve(const Graph&, int upper_bound) const override;
 };
 
-#endif  // LITTLE_TSP_SOLVER_H
+#endif  // TSP_SOLVER_LITTLE_TSP_SOLVER_H

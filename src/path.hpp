@@ -9,7 +9,7 @@ struct Path {
 	Path() : length{0} {}
 
 	bool operator==(const Path& other) const
-	{ return vertices == other.vertices; };
+	{ return vertices == other.vertices; }
 
 	friend std::ostream& operator<<(std::ostream& os, const Path& p);
 

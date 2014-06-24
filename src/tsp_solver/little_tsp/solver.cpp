@@ -58,14 +58,16 @@ Path LittleTSPSolver::Solve(const Graph& graph, int upper_bound) const {
 		// 1. Exclude the highest penalty, lowest cost edge
 		// (if excluding it doesn't create a disconnected graph)
 		if (root.HasExcludeBranch()) {
-			TreeNode exclude{root, root.GetNextEdge(), false};
+			TreeNode exclude{root};
+			exclude.AddExclude(exclude.GetNextEdge());
 			if (EvaluateNode(graph, exclude, smallest, upper_bound)) {
 				nodes.push(exclude);
 			}
 		}
 
 		// 2. Include the highest penalty, lowest cost edge
-		TreeNode include{root, root.GetNextEdge(), true};
+		TreeNode include{root};
+		include.AddInclude(include.GetNextEdge());
 		if (EvaluateNode(graph, include, smallest, upper_bound)) {
 			nodes.push(include);
 		}

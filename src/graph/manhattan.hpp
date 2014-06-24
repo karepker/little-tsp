@@ -6,7 +6,8 @@
 #include <vector>
 
 #include "graph.hpp"
-#include "util.hpp"
+
+struct Coordinate;
 
 class ManhattanGraph : public Graph {
 public:

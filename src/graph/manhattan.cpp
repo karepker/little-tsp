@@ -5,6 +5,9 @@
 #include <sstream>
 #include <vector>
 
+#include "edge.hpp"
+#include "util.hpp"
+
 using std::cin;
 using std::endl;
 using std::istream;
@@ -13,8 +16,7 @@ using std::string;
 using std::stringstream;
 using std::vector;
 
-ManhattanGraph::ManhattanGraph(istream& input = cin)
-{
+ManhattanGraph::ManhattanGraph(istream& input = cin) {
 	int line_num{0};
 
 	// read the map in

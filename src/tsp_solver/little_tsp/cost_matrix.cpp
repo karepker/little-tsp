@@ -1,13 +1,14 @@
-#include "tsp_solver/little_tsp/cost_matrix.hpp"
+#include "cost_matrix.hpp"
 
 #include <cassert>
 
 #include <vector>
 #include <algorithm>
 
+#include "cost_matrix_integer.hpp"
+#include "edge.hpp"
 #include "graph/graph.hpp"
 #include "matrix.hpp"
-#include "tsp_solver/little_tsp/cost_matrix_integer.hpp"
 
 using std::for_each;
 using std::min_element;
@@ -42,7 +43,11 @@ CostMatrix::CostMatrix(const Graph& graph, const vector<Edge>& include,
 	}
 
 	// mark cells that have been excluded as infinite
-	for (const Edge& e : exclude) { cost_matrix_(e.u, e.v).SetInfinite(); }
+	for (const Edge& e : exclude) { 
+		CostMatrixInteger cell_integer{cost_matrix_(e.u, e.v)};
+		if (!cell_integer.IsAvailable()) { continue; }
+		cost_matrix_(e.u, e.v).SetInfinite(); 
+	}
 }
 
 int CostMatrix::ReduceMatrix() {

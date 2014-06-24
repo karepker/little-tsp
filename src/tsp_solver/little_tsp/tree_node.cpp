@@ -33,6 +33,9 @@ using std::vector;
 
 const int infinity{numeric_limits<int>::max()};
 
+TreeNode::TreeNode() : next_edge_{-1, -1}, found_lb_and_edge_{false}, 
+	has_exclude_branch_{false}, lower_bound_{0} {}
+
 TreeNode::TreeNode(const Graph& graph) : next_edge_{-1, -1}, 
 		found_lb_and_edge_{false}, has_exclude_branch_{false}, lower_bound_{0} {
 	// exclude all cells along the diagonal, we don't want self-loops
@@ -41,15 +44,11 @@ TreeNode::TreeNode(const Graph& graph) : next_edge_{-1, -1},
 	}
 }
 
-TreeNode::TreeNode(const TreeNode& old, Edge e, bool inc) : TreeNode{old} { 
-	inc ? AddInclude(e) : AddExclude(e); 
-}
-
 void TreeNode::AddInclude(const Edge& e) {
 	// find the largest subtour involving the edge to add
 	deque<int> subtour{e.u, e.v};
 	bool found_edge{true};
-	while(found_edge) {
+	while (found_edge) {
 		found_edge = false;
 		for (const Edge& check : include_) {
 			// determine if "check" goes before in a subtour
@@ -183,6 +182,7 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 	// and set the flag that calculations have been completed
 	next_edge_ = max_penalty_it->edge;
 	found_lb_and_edge_ = true;
+	has_exclude_branch_ = true;
 	return true;
 }
 
@@ -213,6 +213,7 @@ bool TreeNode::HandleBaseCase(const Graph& graph, const CostMatrix& cost_matrix,
 	lower_bound_ = accumulate(include_.begin(), include_.end(), 0, 
 			[&graph](int current_lb, Edge e) { return current_lb + graph(e); });
 
+	has_exclude_branch_ = false;
 	found_lb_and_edge_ = true;
 	return false;  // no next edge, we have a complete tour
 }

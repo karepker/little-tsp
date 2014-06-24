@@ -33,12 +33,6 @@ private:
 };
 
 // provides a basic encapsulation of a coordinate
-struct Coordinate {
-	int x;
-	int y;
-};
-
-// a simple edge structure
-struct Edge { int u, v; };
+struct Coordinate { int x, y; };
 
 #endif  // UTIL_H
