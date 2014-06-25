@@ -35,7 +35,8 @@ public:
 		EXPECT_CALL(graph, GetNumVertices()).WillRepeatedly(Return(6));
 	}
 
-	TreeNode TestIncludeBranch(TreeNode& parent, Edge e);
+	TreeNode TestIncludeBranch(TreeNode& parent, Edge e, int lower_bound);
+	TreeNode TestExcludeBranch(TreeNode& parent, Edge e, int lower_bound);
 
 protected:
 	TreeNode tree_node1, tree_node2;
@@ -60,7 +61,7 @@ protected:
  *                                                /         \
  *                                        not(3, 2)         (3, 2)
  *                                                          (5, 1)
- *                                                          ^ optimal tour: 52
+ *                                                          ^ optimal tour: 63
  */
 
 TEST_F(TreeNodeTest, GetTSPPath) {
@@ -78,15 +79,24 @@ TEST_F(TreeNodeTest, GetTSPPath) {
 	EXPECT_EQ(63, tsp_path.length);
 }
 
-TEST_F(TreeNodeTest, CalcLBAndNextEdge) {
+TEST_F(TreeNodeTest, CalcLBAndNextEdgeExclude) {
 	TreeNode root{graph};
-	TreeNode level1{TestIncludeBranch(root, {0, 3})};
-	TreeNode level2{TestIncludeBranch(level1, {1, 0})};
-	TreeNode level3{TestIncludeBranch(level2, {4, 5})};
-	TreeNode level4{TestIncludeBranch(level3, {2, 4})};
+	TreeNode level1{TestExcludeBranch(root, {0, 3}, 48)};
+	TestExcludeBranch(level1, {5, 2}, 58);
+}
+
+TEST_F(TreeNodeTest, CalcLBAndNextEdgeInclude) {
+	TreeNode root{graph};
+	TreeNode level1{TestIncludeBranch(root, {0, 3}, 48)};
+	TreeNode level2{TestIncludeBranch(level1, {1, 0}, 49)};
+	TreeNode level3{TestIncludeBranch(level2, {4, 5}, 51)};
+	TreeNode end{TestIncludeBranch(level3, {2, 4}, 56)};
 
 	// test the base case
-	TreeNode end{level4};
+	EXPECT_FALSE(end.CalcLBAndNextEdge(graph));
+	EXPECT_FALSE(end.HasExcludeBranch());
+	EXPECT_EQ(63, end.GetLowerBound());
+
 	EXPECT_FALSE(end.CalcLBAndNextEdge(graph));
 	EXPECT_FALSE(end.HasExcludeBranch());
 
@@ -95,13 +105,26 @@ TEST_F(TreeNodeTest, CalcLBAndNextEdge) {
 	const vector<int> expected_path{0, 3, 2, 4, 5, 1};
 	EXPECT_EQ(expected_path, tsp_path.vertices);
 	EXPECT_EQ(63, tsp_path.length);
-};
+}
 
-TreeNode TreeNodeTest::TestIncludeBranch(TreeNode& parent, Edge e) {
+TreeNode TreeNodeTest::TestIncludeBranch(TreeNode& parent, Edge e, 
+		int lower_bound) {
+	EXPECT_TRUE(parent.CalcLBAndNextEdge(graph));
+	EXPECT_TRUE(parent.HasExcludeBranch());
+	EXPECT_EQ(e, parent.GetNextEdge());
+	EXPECT_EQ(lower_bound, parent.GetLowerBound());
 	TreeNode node{parent};
-	EXPECT_TRUE(node.CalcLBAndNextEdge(graph));
-	EXPECT_TRUE(node.HasExcludeBranch());
-	EXPECT_EQ(e, node.GetNextEdge());
 	node.AddInclude(e);
+	return node;
+}
+
+TreeNode TreeNodeTest::TestExcludeBranch(TreeNode& parent, Edge e, 
+		int lower_bound) {
+	EXPECT_TRUE(parent.CalcLBAndNextEdge(graph));
+	EXPECT_TRUE(parent.HasExcludeBranch());
+	EXPECT_EQ(e, parent.GetNextEdge());
+	EXPECT_EQ(lower_bound, parent.GetLowerBound());
+	TreeNode node{parent};
+	node.AddExclude(e);
 	return node;
 }

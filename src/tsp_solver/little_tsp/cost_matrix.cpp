@@ -26,7 +26,7 @@ CostMatrix::CostMatrix(const Graph& graph, const vector<Edge>& include,
 	// set initial values of cells
 	for (int i{0}; i < graph.GetNumVertices(); ++i) {
 		for (int j{0}; j < graph.GetNumVertices(); ++j) {
-			cost_matrix_(i, j) = CostMatrixInteger{graph(i, j)};
+			cost_matrix_(i, j) = CostMatrixInteger{graph(i, j), Edge{i, j}};
 		}
 	}
 
@@ -44,7 +44,7 @@ CostMatrix::CostMatrix(const Graph& graph, const vector<Edge>& include,
 
 	// mark cells that have been excluded as infinite
 	for (const Edge& e : exclude) { 
-		CostMatrixInteger cell_integer{cost_matrix_(e.u, e.v)};
+		CostMatrixInteger& cell_integer{cost_matrix_(e.u, e.v)};
 		if (!cell_integer.IsAvailable()) { continue; }
 		cost_matrix_(e.u, e.v).SetInfinite(); 
 	}
@@ -107,21 +107,14 @@ bool CostVector::IsCellAvailable(int cell_num) const {
 	return operator[](cell_num).IsAvailable();
 }
 
-CostVector::Iterator CostVector::Iterator::operator++(int) {
-	int current_traversing_cell_index{traversing_cell_index_};
-	int vector_size{cost_vector_->cost_matrix_->size()};
-	while (++traversing_cell_index_ < vector_size &&
-			!cost_vector_->IsCellAvailable(traversing_cell_index_));
-	return Iterator{cost_vector_, current_traversing_cell_index};
+CostVector::Iterator::Iterator(CostVector* cost_vector) : 
+		cost_vector_{cost_vector}, traversing_cell_index_{0} { 
+	// move to the next element if the first is not available
+	if (!cost_vector_->IsCellAvailable(traversing_cell_index_)) {
+		MoveToNextCell(); 
+	}
 }
-
-CostVector::Iterator& CostVector::Iterator::operator++() {
-	int vector_size{cost_vector_->cost_matrix_->size()};
-	while (++traversing_cell_index_ < vector_size &&
-			!cost_vector_->IsCellAvailable(traversing_cell_index_));
-	return *this;
-}
-
+	
 CostMatrixInteger& CostVector::Iterator::operator*() { 
 	assert(cost_vector_);
 	return (*cost_vector_)[traversing_cell_index_]; 
@@ -132,6 +125,17 @@ CostMatrixInteger* CostVector::Iterator::operator->() {
 	return &(*cost_vector_)[traversing_cell_index_];
 }
 
+CostVector::Iterator CostVector::Iterator::operator++(int) {
+	int current_traversing_cell_index{traversing_cell_index_};
+	MoveToNextCell();
+	return Iterator{cost_vector_, current_traversing_cell_index};
+}
+
+CostVector::Iterator& CostVector::Iterator::operator++() {
+	MoveToNextCell();
+	return *this;
+}
+
 bool CostVector::Iterator::operator==(const CostVector::Iterator& other) const {
 	return cost_vector_ == other.cost_vector_ && 
 		traversing_cell_index_ == other.traversing_cell_index_;
@@ -139,6 +143,12 @@ bool CostVector::Iterator::operator==(const CostVector::Iterator& other) const {
 
 bool CostVector::Iterator::operator!=(const CostVector::Iterator& other) const {
 	return !(operator==(other)); 
+}
+
+void CostVector::Iterator::MoveToNextCell() {
+	int vector_size{cost_vector_->cost_matrix_->size()};
+	while (++traversing_cell_index_ < vector_size &&
+			!cost_vector_->IsCellAvailable(traversing_cell_index_));
 }
 
 CostColumn::CostColumn(CostMatrix* cost_matrix, int column_num) : 
@@ -163,18 +173,24 @@ CostMatrixInteger* CostMatrix::Iterator::operator->() {
 	return &(*cost_matrix_)(row_num_, column_num_);
 }
 
+CostMatrix::Iterator::Iterator(CostMatrix* cost_matrix) :
+		cost_matrix_{cost_matrix}, row_num_{0}, column_num_{0} {
+	// move to the next element if the first one isn't available
+	if (!(*cost_matrix_)(row_num_, column_num_).IsAvailable()) { 
+		MoveToNextCell();
+	}
+}
+
 CostMatrix::Iterator CostMatrix::Iterator::operator++(int) {
 	int current_row_num{row_num_};
 	int current_column_num{column_num_};
-	while (MoveToNextCell() && 
-			!(*cost_matrix_)(row_num_, column_num_).IsAvailable());
+	MoveToNextCell();
 	return CostMatrix::Iterator{cost_matrix_, current_row_num, 
 		current_column_num};
 }
 
 CostMatrix::Iterator& CostMatrix::Iterator::operator++() {
-	while (MoveToNextCell() &&
-			!(*cost_matrix_)(row_num_, column_num_).IsAvailable());
+	MoveToNextCell();
 	return *this;
 }
 
@@ -187,17 +203,16 @@ bool CostMatrix::Iterator::operator!=(const CostMatrix::Iterator& other) {
 	return !(operator==(other));
 }
 
-bool CostMatrix::Iterator::MoveToNextCell() {
-	// check if the iterator is already in the end state
-	if (row_num_ == cost_matrix_->size() && column_num_ == 0) { return false; }
-	++column_num_;
-	// check if the iterator is at the end of a row
-	if (column_num_ == cost_matrix_->size()) {
-		column_num_ = 0;
-		// check if the iterator is now in the end state
-		if (++row_num_ == cost_matrix_->size()) { return false; }
-	}
-	return true;
+void CostMatrix::Iterator::MoveToNextCell() {
+	do {
+		// column_num_ wraps around
+		column_num_ = (column_num_ + 1) % cost_matrix_->size();
+		if (column_num_ == 0) { ++row_num_; }
+	// move while the iterator is not at the end and the cell is not available
+	} while (!IsAtEndOfMatrix() && 
+			!(*cost_matrix_)(row_num_, column_num_).IsAvailable());
 }
 
-
+bool CostMatrix::Iterator::IsAtEndOfMatrix() const {
+	return row_num_ == cost_matrix_->size() && column_num_ == 0;
+}

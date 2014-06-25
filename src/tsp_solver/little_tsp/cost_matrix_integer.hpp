@@ -2,6 +2,7 @@
 #define LITTLE_TSP_COST_MATRIX_INTEGER_H
 
 #include "util.hpp"
+#include "edge.hpp"
 
 /** 
  * class used to store integers and their states in a cost matrix in Little's
@@ -14,13 +15,8 @@ public:
 	// default construction is non-available
 	CostMatrixInteger();
 	// creates an available, finite integer with the given value
-	explicit CostMatrixInteger(int value);
-	// creates an integer with value -1, typically should be used only when
-	// integer is infinite or not available
-	CostMatrixInteger(bool infinite, bool available);
-	// allows control of all three parameters
-	CostMatrixInteger(int value, bool infinite, bool available);
-
+	CostMatrixInteger(int value, Edge e);
+	
 	void SetInfinite();
 	void SetUnavailable() { available_ = false; }
 
@@ -28,12 +24,10 @@ public:
 	int operator()() const;
 	bool IsAvailable() const { return available_; }
 	bool IsInfinite() const;
+	Edge GetEdge() const { return edge_; }
 
-	// A whole bunch of overloaded operators. These try and follow the rules of
+	// Overloaded increment and decrement. These try and follow the rules of
 	// math when an integer is infinite, and throw an error if its not available
-	CostMatrixInteger operator+(CostMatrixInteger other) const;
-	CostMatrixInteger operator-(CostMatrixInteger other) const;
-
 	CostMatrixInteger& operator+=(CostMatrixInteger incrementer);
 	CostMatrixInteger& operator-=(CostMatrixInteger decrementer);
 
@@ -47,6 +41,8 @@ private:
 	int value_;
 	bool infinite_;
 	bool available_;
+	// the edge is needed just as often as its weight, so store it
+	Edge edge_;
 };
 
 #endif  // LITTLE_TSP_COST_MATRIX_INTEGER_H

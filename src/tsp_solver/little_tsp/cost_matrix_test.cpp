@@ -16,6 +16,8 @@
 #include "gtest/gtest.h"
 
 using std::back_inserter;
+using std::max_element;
+using std::min_element;
 using std::numeric_limits;
 using std::transform;
 using std::unique_ptr;
@@ -27,8 +29,8 @@ const int infinity{numeric_limits<int>::max()};
 
 const vector<Edge> include1;
 const vector<Edge> exclude1{{0, 0}};
-const vector<Edge> include2{{1, 2}};
-const vector<Edge> exclude2{{1, 0}};
+const vector<Edge> include2{{0, 2}};
+const vector<Edge> exclude2{{0, 0}};
 
 const Matrix<int> graph_weights{3, {6, 2, 4, 4, 5, 3, 8, 9, 7}};
 
@@ -66,7 +68,7 @@ CostMatrixTest::CostMatrixTest() {
 
 	// reduce the matrices
 	EXPECT_EQ(13, matrix1_ptr->ReduceMatrix());
-	EXPECT_EQ(10, matrix2_ptr->ReduceMatrix());
+	EXPECT_EQ(13, matrix2_ptr->ReduceMatrix());
 }
 
 TEST_F(CostMatrixTest, size) {
@@ -77,7 +79,7 @@ TEST_F(CostMatrixTest, size) {
 TEST_F(CostMatrixTest, ReduceMatrix) {
 	// make sure the matrices were reduced correctly
 	CompareWithVector(*matrix1_ptr, {infinity, 0, 2, 0, 2, 0, 0, 2, 0});
-	CompareWithVector(*matrix2_ptr, {4, 0, 0, 1});
+	CompareWithVector(*matrix2_ptr, {0, 0, 0, 0});
 }
 
 TEST_F(CostMatrixTest, GetRow) {
@@ -85,12 +87,17 @@ TEST_F(CostMatrixTest, GetRow) {
 	EXPECT_TRUE(matrix1_ptr->IsRowAvailable(0));
 	EXPECT_TRUE(matrix1_ptr->IsRowAvailable(1));
 	EXPECT_TRUE(matrix1_ptr->IsRowAvailable(2));
+
 	CostMatrix::CostRow row0{matrix1_ptr->GetRow(0)};
 	CostMatrix::CostRow row1{matrix1_ptr->GetRow(1)};
 	CostMatrix::CostRow row2{matrix1_ptr->GetRow(2)};
 	CompareWithVector(row0, {infinity, 0, 2});
 	CompareWithVector(row1, {0, 2, 0});
 	CompareWithVector(row2, {0, 2, 0});
+
+	auto row2_max_it = max_element(row2.begin(), row2.end());
+	int row2_max{row2_max_it->operator()()};
+	EXPECT_EQ(2, row2_max);
 }
 
 TEST_F(CostMatrixTest, GetColumn) {
@@ -101,8 +108,12 @@ TEST_F(CostMatrixTest, GetColumn) {
 	CostMatrix::CostColumn column0{matrix2_ptr->GetColumn(0)};
 	CostMatrix::CostColumn column1{matrix2_ptr->GetColumn(1)};
 	EXPECT_THROW(matrix2_ptr->GetColumn(2), NotAvailableError);
-	CompareWithVector(column0, {4, 0});
-	CompareWithVector(column1, {0, 1});
+	CompareWithVector(column0, {0, 0});
+	CompareWithVector(column1, {0, 0});
+
+	auto column1_max_it = max_element(column1.begin(), column1.end());
+	int column1_max{column1_max_it->operator()()};
+	EXPECT_EQ(0, column1_max);
 }
 
 template<typename T>

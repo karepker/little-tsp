@@ -132,7 +132,7 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 	for (int row{0}; row < graph.GetNumVertices(); ++row) {
 		for (int column{0}; column < graph.GetNumVertices(); ++column) {
 			if (!cost_matrix(row, column).IsAvailable()) { continue; }
-			if (cost_matrix(row, column)() == 0) { 
+			if (cost_matrix(row, column)() == 0) {
 				zeros.push_back({{row, column}, 0});
 			}
 		}
@@ -149,16 +149,22 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 	for (CostMatrixZero& zero : zeros) {
 		// get the penalty in the row
 		CostMatrix::CostRow cost_row{cost_matrix.GetRow(zero.edge.u)};
-		auto row_it = min_element(cost_row.begin(), cost_row.end());
+
+		auto comparator = [&zero](CostMatrixInteger& current, 
+				CostMatrixInteger& highest) {
+			if (current.GetEdge() == zero.edge) { return false; }
+			return current < highest;
+		};
+
+		auto row_it = min_element(cost_row.begin(), cost_row.end(), comparator);
 
 		// get the penalty in the column
 		CostMatrix::CostColumn cost_column{cost_matrix.GetColumn(zero.edge.v)};
-		auto col_it = min_element(cost_column.begin(), cost_column.end());
+		auto col_it = min_element(cost_column.begin(), cost_column.end(), 
+				comparator);
 
 		bool found_min_col{col_it != cost_column.end()};
 		bool found_min_row{row_it != cost_row.end()};
-		int min_col{(*col_it)()};
-		int min_row{(*row_it)()};
 
 		// 2. case when excluding the node creates a disconnected graph
 		if (found_min_col != found_min_row) {
@@ -168,8 +174,14 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 			has_exclude_branch_ = false;
 			return true;
 		}
+
+		assert(col_it != cost_column.end() && row_it != cost_row.end());
+		assert(col_it->IsAvailable() && row_it->IsAvailable());
+		int min_col{(*col_it)()};
+		int min_row{(*row_it)()};
+
 		// 3. normal case, there is both an include and exclude branch
-		else { zero.penalty = min_row + min_col; }
+		zero.penalty = min_row + min_col;
 	}
 
 	// set the next edge as the zero with the highest penalty

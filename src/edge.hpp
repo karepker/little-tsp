@@ -5,6 +5,9 @@
 
 // a simple edge structure
 struct Edge {
+	Edge(int u_, int v_) : u{u_}, v{v_} {}
+	Edge(const Edge&) = default;
+
 	bool operator==(const Edge& other) const {
 		return u == other.u && v == other.v; 
 	}

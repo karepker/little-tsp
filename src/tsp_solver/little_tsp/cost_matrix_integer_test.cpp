@@ -1,5 +1,6 @@
 #include "tsp_solver/little_tsp/cost_matrix_integer.hpp"
 
+#include "edge.hpp"
 #include "util.hpp"
 
 #include "gtest/gtest.h"
@@ -7,10 +8,18 @@
 const int c2_value{1};
 const int c5_value{2};
 
+const Edge edge{0, 0};
+
 class CostMatrixIntegerTest : public ::testing::Test {
 public:
-	CostMatrixIntegerTest() : c2{c2_value}, c3{true, false}, c4{-1, true, true}, 
-		c5{c5_value} {}
+	CostMatrixIntegerTest() : c2{c2_value, edge}, c3{-1, edge}, c4{-1, edge}, 
+			c5{c5_value, edge} {
+		// set c3 as unavailable and infinite, set c4 as infinite
+		c3.SetInfinite();
+		c3.SetUnavailable();
+
+		c4.SetInfinite();
+	}
 
 protected:
 	CostMatrixInteger c1, c2, c3, c4, c5;
@@ -54,32 +63,6 @@ TEST_F(CostMatrixIntegerTest, Available) {
 	EXPECT_FALSE(c2.IsAvailable());
 	EXPECT_FALSE(c3.IsAvailable());
 	EXPECT_FALSE(c4.IsAvailable());
-}
-
-TEST_F(CostMatrixIntegerTest, Addition) {
-	// normal addition	
-	EXPECT_EQ(c2() + c5(), CostMatrixInteger{c2 + c5}());
-
-	// addition with numbers that are not available
-	EXPECT_THROW(CostMatrixInteger{c3 + c5}, NotAvailableError);
-	EXPECT_THROW(CostMatrixInteger{c4 + c1}, NotAvailableError);
-
-	// addition with infinite numbers
-	EXPECT_TRUE(CostMatrixInteger{c4 + c2}.IsInfinite());
-	EXPECT_TRUE(CostMatrixInteger{c5 + c4}.IsInfinite());
-}
-
-TEST_F(CostMatrixIntegerTest, Subtraction) {
-	// normal subtraction	
-	EXPECT_EQ(c2() - c5(), CostMatrixInteger{c2 - c5}());
-
-	// subtraction with numbers that are not available
-	EXPECT_THROW(CostMatrixInteger{c3 - c5}, NotAvailableError);
-	EXPECT_THROW(CostMatrixInteger{c4 - c1}, NotAvailableError);
-
-	// subtraction with infinite numbers
-	EXPECT_TRUE(CostMatrixInteger{c4 - c2}.IsInfinite());
-	EXPECT_THROW(CostMatrixInteger{c5 - c4}, ImplementationError);
 }
 
 TEST_F(CostMatrixIntegerTest, Incrementer) {

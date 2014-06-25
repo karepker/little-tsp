@@ -1,5 +1,8 @@
 #include "tsp_solver/little_tsp/cost_matrix_integer.hpp"
 
+#include "edge.hpp"
+#include "util.hpp"
+
 #include <limits>
 
 using std::numeric_limits;
@@ -7,16 +10,10 @@ using std::numeric_limits;
 const int infinity{numeric_limits<int>::max()};
 
 CostMatrixInteger::CostMatrixInteger() : value_{-1}, infinite_{false},
-	available_{false} {}
+	available_{false}, edge_{-1, -1} {}
 
-CostMatrixInteger::CostMatrixInteger(int value) : value_{value}, 
-	infinite_{false}, available_{true} {}
-
-CostMatrixInteger::CostMatrixInteger(bool infinite, bool available) :
-	value_{-1}, infinite_{infinite}, available_{available} {}
-
-CostMatrixInteger::CostMatrixInteger(int value, bool infinite, bool available) :
-	value_{value}, infinite_{infinite}, available_{available} {}
+CostMatrixInteger::CostMatrixInteger(int value, Edge edge) : value_{value}, 
+	infinite_{false}, available_{true}, edge_{edge} {}
 
 void CostMatrixInteger::SetInfinite() {
 	if (!available_) { throw NotAvailableError{"Integer is not available"}; }
@@ -32,23 +29,6 @@ int CostMatrixInteger::operator()() const {
 bool CostMatrixInteger::IsInfinite() const {
 	if (!available_) { throw NotAvailableError{"Integer is not available"}; }
 	return infinite_;
-}
-
-CostMatrixInteger CostMatrixInteger::operator-(CostMatrixInteger other) const {
-	CheckAvailability(other);
-	if (infinite_) { return CostMatrixInteger{true, true}; }
-	if (other.infinite_) {
-		throw ImplementationError{"Should not be subtracting infinite value!"};
-	}
-
-	// normal operation
-	return CostMatrixInteger{value_ - other.value_};
-}
-
-CostMatrixInteger CostMatrixInteger::operator+(CostMatrixInteger other) const {
-	CheckAvailability(other);
-	if (infinite_ || other.infinite_) { return CostMatrixInteger{true, true}; }
-	return CostMatrixInteger(value_ + other.value_);
 }
 
 CostMatrixInteger& CostMatrixInteger::operator-=(CostMatrixInteger other) {

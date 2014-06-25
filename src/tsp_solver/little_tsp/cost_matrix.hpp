@@ -55,8 +55,7 @@ public:
 
 		class Iterator {
 		public:
-			explicit Iterator(CostVector* cost_vector) :
-				cost_vector_{cost_vector}, traversing_cell_index_{0} {}
+			explicit Iterator(CostVector* cost_vector);
 			Iterator() : cost_vector_{nullptr}, traversing_cell_index_{0} {}
 
 			CostMatrixInteger& operator*();
@@ -74,6 +73,7 @@ public:
 			Iterator(CostVector* cost_vector, int cell_num) :
 				cost_vector_{cost_vector}, traversing_cell_index_{cell_num} {}
 
+			void MoveToNextCell();
 			CostVector* cost_vector_;
 			int traversing_cell_index_;  // changes as iterator moves
 		};
@@ -131,9 +131,7 @@ public:
 	class Iterator {
 	public:
 		Iterator() : cost_matrix_{nullptr}, row_num_{0}, column_num_{0} {}
-
-		explicit Iterator(CostMatrix* cost_matrix) :
-			cost_matrix_{cost_matrix}, row_num_{0}, column_num_{0} {}
+		explicit Iterator(CostMatrix* cost_matrix);
 
 		CostMatrixInteger operator*();
 
@@ -152,7 +150,8 @@ public:
 			cost_matrix_{cost_matrix}, row_num_{row_num}, 
 			column_num_{column_num} {}
 
-		bool MoveToNextCell();
+		void MoveToNextCell();
+		bool IsAtEndOfMatrix() const;
 
 		CostMatrix* cost_matrix_;
 		int row_num_;  // changes as iterator moves
