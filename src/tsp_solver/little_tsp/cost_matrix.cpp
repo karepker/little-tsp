@@ -84,10 +84,17 @@ int CostMatrix::ReduceMatrix() {
 
 const CostMatrixInteger& CostMatrix::operator()(int row_num, 
 		int column_num) const { return cost_matrix_(row_num, column_num); }
+const CostMatrixInteger& CostMatrix::operator()(const Edge& e) const { 
+	return cost_matrix_(e.u, e.v); 
+}
 
 CostMatrixInteger& CostMatrix::operator()(int row_num, int column_num) {
 	return cost_matrix_(row_num, column_num);
 }
+CostMatrixInteger& CostMatrix::operator()(const Edge& e) { 
+	return cost_matrix_(e.u, e.v); 
+}
+
 
 CostRow CostMatrix::GetRow(int row_num) { return CostRow{this, row_num}; }
 

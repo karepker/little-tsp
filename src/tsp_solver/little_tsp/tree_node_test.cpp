@@ -30,6 +30,8 @@ public:
 			for (int j{0}; j < 6; ++j) {
 				EXPECT_CALL(graph, Predicate(i, j)).WillRepeatedly(
 						Return(graph_weights(i, j)));
+				EXPECT_CALL(graph, Predicate(Edge{i, j})).WillRepeatedly(
+						Return(graph_weights(i, j)));
 			}
 		}
 		EXPECT_CALL(graph, GetNumVertices()).WillRepeatedly(Return(6));
@@ -97,11 +99,8 @@ TEST_F(TreeNodeTest, CalcLBAndNextEdgeInclude) {
 	EXPECT_FALSE(end.HasExcludeBranch());
 	EXPECT_EQ(63, end.GetLowerBound());
 
-	EXPECT_FALSE(end.CalcLBAndNextEdge(graph));
-	EXPECT_FALSE(end.HasExcludeBranch());
-
 	// make sure the base case added the right vertices
-	Path tsp_path{root.GetTSPPath(graph)};
+	Path tsp_path{end.GetTSPPath(graph)};
 	const vector<int> expected_path{0, 3, 2, 4, 5, 1};
 	EXPECT_EQ(expected_path, tsp_path.vertices);
 	EXPECT_EQ(63, tsp_path.length);

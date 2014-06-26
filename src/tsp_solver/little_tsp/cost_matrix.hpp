@@ -19,7 +19,9 @@ public:
 	int ReduceMatrix();
 
 	const CostMatrixInteger& operator()(int row_num, int column_num) const;
+	const CostMatrixInteger& operator()(const Edge& e) const;
 	CostMatrixInteger& operator()(int row_num, int column_num);
+	CostMatrixInteger& operator()(const Edge& e);
 
 	bool IsRowAvailable(int row_num) const { return row_available_[row_num]; }
 	bool IsColumnAvailable(int column_num) const {

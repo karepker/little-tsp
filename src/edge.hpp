@@ -11,6 +11,8 @@ struct Edge {
 	bool operator==(const Edge& other) const {
 		return u == other.u && v == other.v; 
 	}
+	bool operator!=(const Edge& other) const { return !(*this == other); }
+
 	int u, v; 
 };
 

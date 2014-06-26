@@ -121,11 +121,27 @@ struct CostMatrixZero {
 	int penalty;
 };
 
+class SetEdgeInfiniteTemporarily {
+public:
+	SetEdgeInfiniteTemporarily(CostMatrix& cost_matrix, const Edge& e) : 
+			cost_matrix_{cost_matrix}, edge_{e}, finite_zero_{cost_matrix(e)} {
+		cost_matrix_(e).SetInfinite();
+	}
+	~SetEdgeInfiniteTemporarily() { cost_matrix_(edge_) = finite_zero_; }
+
+private:
+	CostMatrix& cost_matrix_;	
+	Edge edge_;	
+	CostMatrixInteger finite_zero_;
+};
+
 bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 	// create a cost matrix from information stored in the tree node, reduce it
-	// and use reduction to calculate lower bound
+	// use current edges and reduced cost matrix to calculate lower bound
 	CostMatrix cost_matrix{graph, include_, exclude_};
-	lower_bound_ = cost_matrix.ReduceMatrix();
+	lower_bound_ = accumulate(include_.begin(), include_.end(), 0,
+			[&graph](int i, const Edge& e) { return i + graph(e); });
+	lower_bound_ += cost_matrix.ReduceMatrix();
 
 	// find all the zeros in the matrix
 	vector<CostMatrixZero> zeros;
@@ -137,34 +153,30 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 			}
 		}
 	}
+	assert(!zeros.empty());
 
 	// 3 cases
 	// 1. base case: 2 edges left to add
 	if (graph.GetNumVertices() - include_.size() == 2) {
-		assert(!zeros.empty());
 		return HandleBaseCase(graph, cost_matrix, zeros[0]);
 	}
 
 	// get a penalty associated with each zero
 	for (CostMatrixZero& zero : zeros) {
-		// get the penalty in the row
+		// set the cell corresponding to the zero as infinite in the cost matrix
+		// so it is not chosen as the minimum element
+		SetEdgeInfiniteTemporarily infinite_edge{cost_matrix, zero.edge};
+
+		// get the penalty in the row and column
 		CostMatrix::CostRow cost_row{cost_matrix.GetRow(zero.edge.u)};
-
-		auto comparator = [&zero](CostMatrixInteger& current, 
-				CostMatrixInteger& highest) {
-			if (current.GetEdge() == zero.edge) { return false; }
-			return current < highest;
-		};
-
-		auto row_it = min_element(cost_row.begin(), cost_row.end(), comparator);
-
-		// get the penalty in the column
 		CostMatrix::CostColumn cost_column{cost_matrix.GetColumn(zero.edge.v)};
-		auto col_it = min_element(cost_column.begin(), cost_column.end(), 
-				comparator);
 
-		bool found_min_col{col_it != cost_column.end()};
-		bool found_min_row{row_it != cost_row.end()};
+		auto row_it = min_element(cost_row.begin(), cost_row.end());
+		auto col_it = min_element(cost_column.begin(), cost_column.end());
+
+		bool found_min_col{col_it != cost_column.end() && 
+			!col_it->IsInfinite()};
+		bool found_min_row{row_it != cost_row.end() && !row_it->IsInfinite()};
 
 		// 2. case when excluding the node creates a disconnected graph
 		if (found_min_col != found_min_row) {
