@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <deque>
 #include <exception>
-#include <functional>
 #include <iterator>
 #include <limits>
 
@@ -17,21 +16,14 @@
 #include "util.hpp"
 
 using std::back_inserter;
-using std::bind;
 using std::copy_if;
 using std::deque;
 using std::exception;
+using std::for_each;
 using std::max_element;
 using std::min_element;
-using std::numeric_limits;
 using std::ostream;
-using std::pair;
-using std::plus;
-using std::placeholders::_1;
-using std::sort;
 using std::vector;
-
-const int infinity{numeric_limits<int>::max()};
 
 TreeNode::TreeNode() : next_edge_{-1, -1}, found_lb_and_edge_{false}, 
 	has_exclude_branch_{false}, lower_bound_{0} {}
@@ -79,32 +71,24 @@ void TreeNode::AddInclude(const Edge& e) {
 // build the TSP path once it exists
 // this method will infinite loop if there is not a full path
 Path TreeNode::GetTSPPath(const Graph& graph) const {
-	// create the solution path
-	Path solution;
-	solution.vertices.reserve(include_.size());
+	// bucket sort the edges and then find the path through them
+	vector<Edge> edges{include_};
+	for_each(include_.begin(), include_.end(), [&edges](const Edge& e) 
+			{ edges[e.u] = e; });
 
 	// to help find the path
-	int past_vertex{0};
+	Path solution;
 	int vertex{0};
-
-	// sort the edges and then find the path through them
-	vector<Edge> edges = include_;
-	sort(edges.begin(), edges.end(), [](const Edge& first, const Edge& second) 
-			{ return first.u < second.u; });
 
 	for (int i{0}; i < int(edges.size()); ++i) {
 		// push the next vertex on to the path
 		solution.vertices.push_back(vertex);
 		vertex = edges[vertex].v;
-
-		// incremement the length of the path
-		solution.length += graph(past_vertex, vertex);
-		past_vertex = vertex;
 	}
 
-	// finish the path
+	// set the path length
 	assert(vertex == 0);
-	solution.length += graph(past_vertex, vertex);
+	solution.length = CalculateLowerBound(graph);
 
 	return solution;
 }
@@ -139,26 +123,23 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 	// create a cost matrix from information stored in the tree node, reduce it
 	// use current edges and reduced cost matrix to calculate lower bound
 	CostMatrix cost_matrix{graph, include_, exclude_};
-	lower_bound_ = accumulate(include_.begin(), include_.end(), 0,
-			[&graph](int i, const Edge& e) { return i + graph(e); });
+	lower_bound_ = CalculateLowerBound(graph);
 	lower_bound_ += cost_matrix.ReduceMatrix();
 
-	// find all the zeros in the matrix
+	// find all the zeros in the matrix and copy them into the zeros vector
 	vector<CostMatrixZero> zeros;
-	for (int row{0}; row < graph.GetNumVertices(); ++row) {
-		for (int column{0}; column < graph.GetNumVertices(); ++column) {
-			if (!cost_matrix(row, column).IsAvailable()) { continue; }
-			if (cost_matrix(row, column)() == 0) {
-				zeros.push_back({{row, column}, 0});
-			}
-		}
-	}
+	vector<CostMatrixInteger> zero_cmis;
+	copy_if(cost_matrix.begin(), cost_matrix.end(), back_inserter(zero_cmis),
+		[](const CostMatrixInteger& cmi) { return cmi() == 0; });
+	transform(zero_cmis.begin(), zero_cmis.end(), back_inserter(zeros), 
+		[](const CostMatrixInteger& cmi) 
+		{ return CostMatrixZero{cmi.GetEdge(), 0}; });
 	assert(!zeros.empty());
 
 	// 3 cases
 	// 1. base case: 2 edges left to add
 	if (graph.GetNumVertices() - include_.size() == 2) {
-		return HandleBaseCase(graph, cost_matrix, zeros[0]);
+		return HandleBaseCase(graph, cost_matrix, zeros);
 	}
 
 	// get a penalty associated with each zero
@@ -211,33 +192,21 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 }
 
 bool TreeNode::HandleBaseCase(const Graph& graph, const CostMatrix& cost_matrix,
-		const CostMatrixZero& zero) {
-	// handle the base case
-	AddInclude(zero.edge);
-	int row{-1};
-	int col{-1};
-
-	// INVARIANT: only one valid edge left, find it
-	for (int i{0}; i < graph.GetNumVertices(); ++i) {
-		if (cost_matrix.IsRowAvailable(i) && i != zero.edge.u) {
-			row = i;
-			break;
-		}
-	}
-	for (int j{0}; j < graph.GetNumVertices(); ++j) {
-		if (cost_matrix.IsColumnAvailable(j) && j != zero.edge.v) {
-			col = j;
-			break;
-		}
-	}
-	assert(row != -1 && col != -1);
-	AddInclude({ row, col });
+		const vector<CostMatrixZero>& remaining_edges) {
+	// add the last two edges to complete the path
+	assert(remaining_edges.size() == 2);
+	AddInclude(remaining_edges[0].edge);
+	AddInclude(remaining_edges[1].edge);
 
 	// recalculate LB, i.e. the length of the TSP tour
-	lower_bound_ = accumulate(include_.begin(), include_.end(), 0, 
-			[&graph](int current_lb, Edge e) { return current_lb + graph(e); });
+	lower_bound_ = CalculateLowerBound(graph);
 
 	has_exclude_branch_ = false;
 	found_lb_and_edge_ = true;
 	return false;  // no next edge, we have a complete tour
+}
+
+int TreeNode::CalculateLowerBound(const Graph& graph) const {
+	return accumulate(include_.begin(), include_.end(), 0,
+		[&graph](int current_lb, Edge e) { return current_lb + graph(e); });
 }

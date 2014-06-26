@@ -41,7 +41,8 @@ public:
 
 private:
 	bool HandleBaseCase(const Graph& graph, const CostMatrix& cost_matrix,
-			const CostMatrixZero& zero);
+			const std::vector<CostMatrixZero>& remaining_edges);
+	int CalculateLowerBound(const Graph& graph) const;
 
 	// edges that are being included and excluded
 	std::vector<Edge> include_;
