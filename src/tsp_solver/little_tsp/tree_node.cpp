@@ -22,8 +22,11 @@ using std::exception;
 using std::for_each;
 using std::max_element;
 using std::min_element;
+using std::numeric_limits;
 using std::ostream;
 using std::vector;
+
+const int infinity{numeric_limits<int>::max()};
 
 TreeNode::TreeNode() : next_edge_{-1, -1}, found_lb_and_edge_{false}, 
 	has_exclude_branch_{false}, lower_bound_{0} {}
@@ -103,6 +106,8 @@ ostream& operator<<(ostream& os, const TreeNode& p) {
 struct CostMatrixZero {
 	Edge edge;
 	int penalty;
+	bool operator<(const CostMatrixZero& other) const
+	{ return penalty < other.penalty; }
 };
 
 class SetEdgeInfiniteTemporarily {
@@ -136,12 +141,6 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 		{ return CostMatrixZero{cmi.GetEdge(), 0}; });
 	assert(!zeros.empty());
 
-	// 3 cases
-	// 1. base case: 2 edges left to add
-	if (graph.GetNumVertices() - include_.size() == 2) {
-		return HandleBaseCase(graph, cost_matrix, zeros);
-	}
-
 	// get a penalty associated with each zero
 	for (CostMatrixZero& zero : zeros) {
 		// set the cell corresponding to the zero as infinite in the cost matrix
@@ -154,13 +153,24 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 
 		auto row_it = min_element(cost_row.begin(), cost_row.end());
 		auto col_it = min_element(cost_column.begin(), cost_column.end());
+		assert(col_it != cost_column.end() && row_it != cost_row.end());
+		assert(col_it->IsAvailable() && row_it->IsAvailable());
 
-		bool found_min_col{col_it != cost_column.end() && 
-			!col_it->IsInfinite()};
-		bool found_min_row{row_it != cost_row.end() && !row_it->IsInfinite()};
+		// 3 cases
+		// 1. base case: 2 edges left to add. We need to know if penalty is zero
+		// or infinite so we can choose the two edges with the highest penalties
+		if (graph.GetNumVertices() - include_.size() == 2) {
+			if (col_it->IsInfinite() || row_it->IsInfinite()) { 
+				zero.penalty = infinity;
+			} else { 
+				assert((*col_it)() == 0 && (*row_it)() == 0);
+				zero.penalty = 0;
+			}
+			continue;
+		}
 
 		// 2. case when excluding the node creates a disconnected graph
-		if (found_min_col != found_min_row) {
+		if (col_it->IsInfinite() != row_it->IsInfinite()) {
 			assert(graph.GetNumVertices() - include_.size() != 2);
 			// we must choose this edge and cannot branch
 			next_edge_ = zero.edge;
@@ -168,21 +178,18 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 			return true;
 		}
 
-		assert(col_it != cost_column.end() && row_it != cost_row.end());
-		assert(col_it->IsAvailable() && row_it->IsAvailable());
-		int min_col{(*col_it)()};
-		int min_row{(*row_it)()};
-
 		// 3. normal case, there is both an include and exclude branch
-		zero.penalty = min_row + min_col;
+		zero.penalty = (*col_it)() + (*row_it)();
+	}
+
+	// finish handling base case in a separate function
+	if (graph.GetNumVertices() - include_.size() == 2) {
+		return HandleBaseCase(graph, cost_matrix, zeros);
 	}
 
 	// set the next edge as the zero with the highest penalty
-	auto max_penalty_it = max_element(zeros.begin(), zeros.end(), 
-			[](CostMatrixZero& highest, CostMatrixZero& current) {
-				return highest.penalty < current.penalty;
-			});
-	
+	auto max_penalty_it = max_element(zeros.begin(), zeros.end());
+		
 	// for any other case, set the next edge to branch on
 	// and set the flag that calculations have been completed
 	next_edge_ = max_penalty_it->edge;
@@ -192,11 +199,18 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 }
 
 bool TreeNode::HandleBaseCase(const Graph& graph, const CostMatrix& cost_matrix,
-		const vector<CostMatrixZero>& remaining_edges) {
-	// add the last two edges to complete the path
-	assert(remaining_edges.size() == 2);
-	AddInclude(remaining_edges[0].edge);
-	AddInclude(remaining_edges[1].edge);
+		const vector<CostMatrixZero>& zeros) {
+	// find the edge with the largest penalty, remove it from zeros
+	auto max_penalty_it = max_element(zeros.begin(), zeros.end());
+	Edge edge = max_penalty_it->edge;
+	AddInclude(edge);
+
+	// find the zero that completes the path (is not in the same row or column)
+	auto last_zero_it = find_if_not(zeros.begin(), zeros.end(), 
+			[&edge](const CostMatrixZero& current) { 
+			return current.edge.u == edge.u || current.edge.v == edge.v; });
+	assert(last_zero_it != zeros.end());
+	AddInclude(last_zero_it->edge);
 
 	// recalculate LB, i.e. the length of the TSP tour
 	lower_bound_ = CalculateLowerBound(graph);
