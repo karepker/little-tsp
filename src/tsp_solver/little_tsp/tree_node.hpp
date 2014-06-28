@@ -1,11 +1,11 @@
 #ifndef TSP_SOLVER_LITTLE_TSP_TREE_NODE_H
 #define TSP_SOLVER_LITTLE_TSP_TREE_NODE_H
 
+#include <iosfwd>
 #include <vector>
-#include <iostream>
 
-#include "matrix.hpp"
 #include "edge.hpp"
+#include "matrix.hpp"
 
 // forward declare
 class CostMatrix;
@@ -16,7 +16,6 @@ class Path;
 class TreeNode {
 public:
 	// some constructors
-	TreeNode();
 	explicit TreeNode(const Graph& costs);
 
 	// Important methods
@@ -25,24 +24,27 @@ public:
 	void AddExclude(const Edge& e) { exclude_.push_back(e); }
 
 	// getters
-	int GetLowerBound() const { return lower_bound_; };
+	int GetLowerBound() const { return lower_bound_; }
 
 	// branching methods
-	bool HasExcludeBranch() const { return has_exclude_branch_; };
-	Edge GetNextEdge() const { return next_edge_; };
+	bool HasExcludeBranch() const { return has_exclude_branch_; }
+	Edge GetNextEdge() const { return next_edge_; }
 	
 	// calculate the lower bound and the next edge, return true if a next edge
 	// was found
-	bool CalcLBAndNextEdge(const Graph& graph);
-	Path GetTSPPath(const Graph& graph) const;
+	bool CalcLBAndNextEdge();
+	Path GetTSPPath() const;
 	
 	// ostream operator
 	friend std::ostream& operator<<(std::ostream& os, const TreeNode& p);
 
 private:
-	bool HandleBaseCase(const Graph& graph, const CostMatrix& cost_matrix,
+	bool HandleBaseCase(const CostMatrix& cost_matrix,
 			const std::vector<CostMatrixZero>& remaining_edges);
-	int CalculateLowerBound(const Graph& graph) const;
+	int CalculateLowerBound() const;
+
+	// the graph from which the tree node gets its weights
+	const Graph* graph_ptr_;
 
 	// edges that are being included and excluded
 	std::vector<Edge> include_;

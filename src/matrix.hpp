@@ -8,7 +8,7 @@
 template <class T>
 class Matrix {
 public:
-	Matrix() : rows_{0}, entries_{0} {}
+	Matrix() : rows_{0} {}
 	Matrix(int rows, int cols) : rows_{rows}, entries_(rows * cols) {}
 	Matrix(int rows, int cols, T initial_value) : rows_{rows}, 
 		entries_(rows * cols, initial_value) {}
@@ -17,7 +17,7 @@ public:
 		assert(entries_.size() % rows == 0);
 	}
 
-	void SetEntries(int rows, int cols) { 
+	void SetSize(int rows, int cols) { 
 		rows_ = rows;
 		entries_.resize(rows * cols);
 	}

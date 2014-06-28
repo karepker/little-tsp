@@ -17,13 +17,11 @@ public:
 	// creates an available, finite integer with the given value
 	CostMatrixInteger(int value, Edge e);
 	
-	void SetInfinite();
-	void SetUnavailable() { available_ = false; }
+	void SetInfinite() { infinite_ = true; }
 
 	// returns the value, throws an error if not available
 	int operator()() const;
-	bool IsAvailable() const { return available_; }
-	bool IsInfinite() const;
+	bool IsInfinite() const { return infinite_; }
 	Edge GetEdge() const { return edge_; }
 
 	// Overloaded increment and decrement. These try and follow the rules of
@@ -34,13 +32,8 @@ public:
 	bool operator<(CostMatrixInteger other) const;
 
 private:
-	// makes sure this CostMatrixInteger and the other CostMatrix integer are
-	// available so operations can be performed on them. Throws error if not
-	void CheckAvailability(CostMatrixInteger other) const;
-
 	int value_;
 	bool infinite_;
-	bool available_;
 	// the edge is needed just as often as its weight, so store it
 	Edge edge_;
 };

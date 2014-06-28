@@ -41,7 +41,6 @@ public:
 	TreeNode TestExcludeBranch(TreeNode& parent, Edge e, int lower_bound);
 
 protected:
-	TreeNode tree_node1, tree_node2;
 	MockGraph graph;
 };
 
@@ -75,7 +74,7 @@ TEST_F(TreeNodeTest, GetTSPPath) {
 	root.AddInclude({3, 2});
 	root.AddInclude({5, 1});
 
-	Path tsp_path{root.GetTSPPath(graph)};
+	Path tsp_path{root.GetTSPPath()};
 	const vector<int> expected_path{0, 3, 2, 4, 5, 1};
 	EXPECT_EQ(expected_path, tsp_path.vertices);
 	EXPECT_EQ(63, tsp_path.length);
@@ -103,7 +102,7 @@ TEST_F(TreeNodeTest, CalcLBAndNextEdgeNoExclude) {
 	// this looks like TestExcludeBranch
 	TreeNode root{no_exclude_graph};
 	Edge root_expected{1, 0};
-	EXPECT_TRUE(root.CalcLBAndNextEdge(no_exclude_graph));
+	EXPECT_TRUE(root.CalcLBAndNextEdge());
 	EXPECT_TRUE(root.HasExcludeBranch());
 	EXPECT_EQ(root_expected, root.GetNextEdge());
 	EXPECT_EQ(0, root.GetLowerBound());
@@ -112,23 +111,57 @@ TEST_F(TreeNodeTest, CalcLBAndNextEdgeNoExclude) {
 
 	// here's the interesting part, level 1 can't have an exclude branch
 	Edge level1_expected{1, 2};
-	EXPECT_TRUE(level1.CalcLBAndNextEdge(no_exclude_graph));
+	EXPECT_TRUE(level1.CalcLBAndNextEdge());
 	EXPECT_FALSE(level1.HasExcludeBranch());
 	EXPECT_EQ(level1_expected, level1.GetNextEdge());
-	EXPECT_EQ(4, root.GetLowerBound());
+	EXPECT_EQ(4, level1.GetLowerBound());
 	TreeNode level2{root};
 	level2.AddInclude(level1_expected);
 
 	// check the base case:
-	EXPECT_FALSE(level2.CalcLBAndNextEdge(no_exclude_graph));
+	EXPECT_FALSE(level2.CalcLBAndNextEdge());
 	EXPECT_FALSE(level2.HasExcludeBranch());
-	EXPECT_EQ(5, root.GetLowerBound());
+	EXPECT_EQ(5, level2.GetLowerBound());
 
 	// check that the path is right
-	Path tsp_path{level2.GetTSPPath(no_exclude_graph)};
+	Path tsp_path{level2.GetTSPPath()};
 	const vector<int> expected_path{0, 1, 2};
 	EXPECT_EQ(expected_path, tsp_path.vertices);
 	EXPECT_EQ(5, tsp_path.length);
+}
+
+TEST_F(TreeNodeTest, CalcLBAndNextEdge2by2Zeros) {
+	Matrix<int> weights{3, {-1, 0, 1, 0, -1, 0, 0, 1, -1}};
+	MockGraph test_graph;
+	for (int i{0}; i < 3; ++i) {
+		for (int j{0}; j < 3; ++j) {
+			EXPECT_CALL(test_graph, Predicate(i, j)).WillRepeatedly(
+					Return(weights(i, j)));
+			EXPECT_CALL(test_graph, Predicate(Edge{i, j})).WillRepeatedly(
+					Return(weights(i, j)));
+		}
+	}
+	EXPECT_CALL(test_graph, GetNumVertices()).WillRepeatedly(Return(3));
+
+	// root
+	TreeNode root{test_graph};
+	Edge level1_expected{0, 1};
+	EXPECT_TRUE(root.CalcLBAndNextEdge());
+	EXPECT_TRUE(root.HasExcludeBranch());
+	EXPECT_EQ(level1_expected, root.GetNextEdge());
+	EXPECT_EQ(0, root.GetLowerBound());
+	TreeNode level1{root};
+	level1.AddInclude(level1_expected);
+
+	// level 1 (last node)
+	EXPECT_FALSE(level1.CalcLBAndNextEdge());
+	EXPECT_EQ(0, level1.GetLowerBound());
+
+	// check that the path is right
+	Path tsp_path{level1.GetTSPPath()};
+	const vector<int> expected_path{0, 1, 2};
+	EXPECT_EQ(expected_path, tsp_path.vertices);
+	EXPECT_EQ(0, tsp_path.length);
 }
 
 TEST_F(TreeNodeTest, CalcLBAndNextEdgeInclude) {
@@ -139,12 +172,12 @@ TEST_F(TreeNodeTest, CalcLBAndNextEdgeInclude) {
 	TreeNode end{TestIncludeBranch(level3, {2, 4}, 56)};
 
 	// test the base case
-	EXPECT_FALSE(end.CalcLBAndNextEdge(graph));
+	EXPECT_FALSE(end.CalcLBAndNextEdge());
 	EXPECT_FALSE(end.HasExcludeBranch());
 	EXPECT_EQ(63, end.GetLowerBound());
 
 	// make sure the base case added the right vertices
-	Path tsp_path{end.GetTSPPath(graph)};
+	Path tsp_path{end.GetTSPPath()};
 	const vector<int> expected_path{0, 3, 2, 4, 5, 1};
 	EXPECT_EQ(expected_path, tsp_path.vertices);
 	EXPECT_EQ(63, tsp_path.length);
@@ -152,7 +185,7 @@ TEST_F(TreeNodeTest, CalcLBAndNextEdgeInclude) {
 
 TreeNode TreeNodeTest::TestIncludeBranch(TreeNode& parent, Edge e, 
 		int lower_bound) {
-	EXPECT_TRUE(parent.CalcLBAndNextEdge(graph));
+	EXPECT_TRUE(parent.CalcLBAndNextEdge());
 	EXPECT_TRUE(parent.HasExcludeBranch());
 	EXPECT_EQ(e, parent.GetNextEdge());
 	EXPECT_EQ(lower_bound, parent.GetLowerBound());
@@ -163,7 +196,7 @@ TreeNode TreeNodeTest::TestIncludeBranch(TreeNode& parent, Edge e,
 
 TreeNode TreeNodeTest::TestExcludeBranch(TreeNode& parent, Edge e, 
 		int lower_bound) {
-	EXPECT_TRUE(parent.CalcLBAndNextEdge(graph));
+	EXPECT_TRUE(parent.CalcLBAndNextEdge());
 	EXPECT_TRUE(parent.HasExcludeBranch());
 	EXPECT_EQ(e, parent.GetNextEdge());
 	EXPECT_EQ(lower_bound, parent.GetLowerBound());

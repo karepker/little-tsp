@@ -28,13 +28,15 @@ using std::vector;
 
 const int infinity{numeric_limits<int>::max()};
 
-TreeNode::TreeNode() : next_edge_{-1, -1}, found_lb_and_edge_{false}, 
-	has_exclude_branch_{false}, lower_bound_{0} {}
+/*
+TreeNode::TreeNode() : next_edge_{-1, -1}, found_lb_and_edge_{false},
+	has_exclude_branch_{false}, lower_bound_{0} {} */
 
-TreeNode::TreeNode(const Graph& graph) : next_edge_{-1, -1}, 
-		found_lb_and_edge_{false}, has_exclude_branch_{false}, lower_bound_{0} {
+TreeNode::TreeNode(const Graph& costs) : graph_ptr_{&costs}, 
+		next_edge_{-1, -1}, found_lb_and_edge_{false}, 
+		has_exclude_branch_{false}, lower_bound_{0} {
 	// exclude all cells along the diagonal, we don't want self-loops
-	for (int diag{0}; diag < graph.GetNumVertices(); ++diag) {
+	for (int diag{0}; diag < graph_ptr_->GetNumVertices(); ++diag) {
 		exclude_.push_back({diag, diag});
 	}
 }
@@ -73,7 +75,7 @@ void TreeNode::AddInclude(const Edge& e) {
 
 // build the TSP path once it exists
 // this method will infinite loop if there is not a full path
-Path TreeNode::GetTSPPath(const Graph& graph) const {
+Path TreeNode::GetTSPPath() const {
 	// bucket sort the edges and then find the path through them
 	vector<Edge> edges{include_};
 	for_each(include_.begin(), include_.end(), [&edges](const Edge& e) 
@@ -91,7 +93,7 @@ Path TreeNode::GetTSPPath(const Graph& graph) const {
 
 	// set the path length
 	assert(vertex == 0);
-	solution.length = CalculateLowerBound(graph);
+	solution.length = CalculateLowerBound();
 
 	return solution;
 }
@@ -124,11 +126,11 @@ private:
 	CostMatrixInteger finite_zero_;
 };
 
-bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
+bool TreeNode::CalcLBAndNextEdge() {
 	// create a cost matrix from information stored in the tree node, reduce it
 	// use current edges and reduced cost matrix to calculate lower bound
-	CostMatrix cost_matrix{graph, include_, exclude_};
-	lower_bound_ = CalculateLowerBound(graph);
+	CostMatrix cost_matrix{*graph_ptr_, include_, exclude_};
+	lower_bound_ = CalculateLowerBound();
 	lower_bound_ += cost_matrix.ReduceMatrix();
 
 	// find all the zeros in the matrix and copy them into the zeros vector
@@ -154,12 +156,11 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 		auto row_it = min_element(cost_row.begin(), cost_row.end());
 		auto col_it = min_element(cost_column.begin(), cost_column.end());
 		assert(col_it != cost_column.end() && row_it != cost_row.end());
-		assert(col_it->IsAvailable() && row_it->IsAvailable());
 
 		// 3 cases
 		// 1. base case: 2 edges left to add. We need to know if penalty is zero
 		// or infinite so we can choose the two edges with the highest penalties
-		if (graph.GetNumVertices() - include_.size() == 2) {
+		if (graph_ptr_->GetNumVertices() - include_.size() == 2) {
 			if (col_it->IsInfinite() || row_it->IsInfinite()) { 
 				zero.penalty = infinity;
 			} else { 
@@ -169,9 +170,9 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 			continue;
 		}
 
-		// 2. case when excluding the node creates a disconnected graph
+		// 2. case when excluding the node creates a disconnected graph_
 		if (col_it->IsInfinite() != row_it->IsInfinite()) {
-			assert(graph.GetNumVertices() - include_.size() != 2);
+			assert(graph_ptr_->GetNumVertices() - include_.size() != 2);
 			// we must choose this edge and cannot branch
 			next_edge_ = zero.edge;
 			has_exclude_branch_ = false;
@@ -183,8 +184,8 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 	}
 
 	// finish handling base case in a separate function
-	if (graph.GetNumVertices() - include_.size() == 2) {
-		return HandleBaseCase(graph, cost_matrix, zeros);
+	if (graph_ptr_->GetNumVertices() - include_.size() == 2) {
+		return HandleBaseCase(cost_matrix, zeros);
 	}
 
 	// set the next edge as the zero with the highest penalty
@@ -198,7 +199,7 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 	return true;
 }
 
-bool TreeNode::HandleBaseCase(const Graph& graph, const CostMatrix& cost_matrix,
+bool TreeNode::HandleBaseCase(const CostMatrix& cost_matrix,
 		const vector<CostMatrixZero>& zeros) {
 	// find the edge with the largest penalty, remove it from zeros
 	auto max_penalty_it = max_element(zeros.begin(), zeros.end());
@@ -213,14 +214,16 @@ bool TreeNode::HandleBaseCase(const Graph& graph, const CostMatrix& cost_matrix,
 	AddInclude(last_zero_it->edge);
 
 	// recalculate LB, i.e. the length of the TSP tour
-	lower_bound_ = CalculateLowerBound(graph);
+	lower_bound_ = CalculateLowerBound();
 
 	has_exclude_branch_ = false;
 	found_lb_and_edge_ = true;
 	return false;  // no next edge, we have a complete tour
 }
 
-int TreeNode::CalculateLowerBound(const Graph& graph) const {
+int TreeNode::CalculateLowerBound() const {
 	return accumulate(include_.begin(), include_.end(), 0,
-		[&graph](int current_lb, Edge e) { return current_lb + graph(e); });
+		[this](int current_lb, Edge e) { 
+		return current_lb + (*graph_ptr_)(e); 
+		});
 }

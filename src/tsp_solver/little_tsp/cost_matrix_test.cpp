@@ -53,7 +53,7 @@ CostMatrixTest::CostMatrixTest() {
 	// set expectations for the graph
 	for (int i{0}; i < graph_weights.GetNumRows(); ++i) {
 		for (int j{0}; j < graph_weights.GetNumColumns(); ++j) {
-			EXPECT_CALL(graph, Predicate(i, j)).Times(2).WillRepeatedly(
+			EXPECT_CALL(graph, Predicate(i, j)).WillRepeatedly(
 					Return(graph_weights(i, j)));
 		}
 	}
@@ -71,9 +71,9 @@ CostMatrixTest::CostMatrixTest() {
 	EXPECT_EQ(13, matrix2_ptr->ReduceMatrix());
 }
 
-TEST_F(CostMatrixTest, size) {
-	EXPECT_EQ(3, matrix1_ptr->size());
-	EXPECT_EQ(3, matrix2_ptr->size());
+TEST_F(CostMatrixTest, Size) {
+	EXPECT_EQ(3, matrix1_ptr->Size());
+	EXPECT_EQ(2, matrix2_ptr->Size());
 }
 
 TEST_F(CostMatrixTest, ReduceMatrix) {

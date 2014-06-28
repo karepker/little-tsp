@@ -2,8 +2,9 @@
 
 #include <cassert>
 
-#include <vector>
 #include <algorithm>
+#include <unordered_map>
+#include <vector>
 
 #include "cost_matrix_integer.hpp"
 #include "edge.hpp"
@@ -12,41 +13,46 @@
 
 using std::for_each;
 using std::min_element;
+using std::unordered_map;
 using std::vector;
 
 using CostVector = CostMatrix::CostVector;
 using CostRow = CostMatrix::CostRow;
 using CostColumn = CostMatrix::CostColumn;
 
-CostMatrix::CostMatrix(const Graph& graph, const vector<Edge>& include, 
-		const vector<Edge>& exclude) :
-		cost_matrix_{graph.GetNumVertices(), graph.GetNumVertices()},
-		row_available_(graph.GetNumVertices(), true), 
-		column_available_(graph.GetNumVertices(), true) {
-	// set initial values of cells
-	for (int i{0}; i < graph.GetNumVertices(); ++i) {
-		for (int j{0}; j < graph.GetNumVertices(); ++j) {
-			cost_matrix_(i, j) = CostMatrixInteger{graph(i, j), Edge{i, j}};
-		}
+static unordered_map<int, int> MakeVectorMapping(const vector<bool>& available);
+
+CostMatrix::CostMatrix(const Graph& graph, const vector<Edge>& include,
+		const vector<Edge>& exclude) {
+	// parse included edges first
+	vector<bool> row_available(graph.GetNumVertices(), true);
+	vector<bool> column_available(graph.GetNumVertices(), true);
+	for (const Edge& e : include) {
+		row_available[e.u] = false;
+		column_available[e.v] = false;
 	}
 
-	// mark rows and columns that have been included as not available
-	for (const Edge& e : include) {
-		row_available_[e.u] = false;
-		column_available_[e.v] = false;
-		for (int i{0}; i < graph.GetNumVertices(); ++i) {
-			cost_matrix_(e.u, i).SetUnavailable();
-		}
-		for (int i{0}; i < graph.GetNumVertices(); ++i) {
-			cost_matrix_(i, e.v).SetUnavailable();
+	// We'll just skip adding the rows/columns that are unavailable to the
+	// actual Matrix data structure to save space. Call this the "condensed
+	// matrix". Make a mapping of actual row/column numbers to condensed matrix 
+	// row/column numbers
+	row_mapping_ = MakeVectorMapping(row_available);
+	column_mapping_ = MakeVectorMapping(column_available);
+	cost_matrix_.SetSize(row_mapping_.size(), column_mapping_.size());
+
+	// create the condensed matrix
+	for (int i{0}; i < graph.GetNumVertices(); ++i) {
+		if (!IsRowAvailable(i)) { continue; }
+		for (int j{0}; j < graph.GetNumVertices(); ++j) {
+			if (!IsColumnAvailable(j)) { continue; }
+			(*this)(i, j) = CostMatrixInteger{graph(i, j), Edge{i, j}};
 		}
 	}
 
 	// mark cells that have been excluded as infinite
-	for (const Edge& e : exclude) { 
-		CostMatrixInteger& cell_integer{cost_matrix_(e.u, e.v)};
-		if (!cell_integer.IsAvailable()) { continue; }
-		cost_matrix_(e.u, e.v).SetInfinite(); 
+	for (const Edge& e : exclude) {
+		if (!IsRowAvailable(e.u) || !IsColumnAvailable(e.v)) { continue; }
+		(*this)(e.u, e.v).SetInfinite();
 	}
 }
 
@@ -55,26 +61,24 @@ int CostMatrix::ReduceMatrix() {
 	int decremented{0};
 
 	// reduce all the rows
-	for (int row_num{0}; row_num < size(); ++row_num) {
-		if (!row_available_[row_num]) { continue; }
-		CostRow cost_row{this, row_num};
+	for (int row_num{0}; row_num < Size(); ++row_num) {
+		CostRow cost_row{&cost_matrix_, row_num};
 		auto min_it = min_element(cost_row.begin(), cost_row.end());
 		assert(min_it != cost_row.end());
 		CostMatrixInteger min{*min_it};
 		assert(!min.IsInfinite());
-		for_each(cost_row.begin(), cost_row.end(), 
+		for_each(cost_row.begin(), cost_row.end(),
 				[&min](CostMatrixInteger& elt) { elt -= min; });
 		decremented += min();
 	}
 
 	// reduce all the columns
-	for (int column_num{0}; column_num < size(); ++column_num) {
-		if (!column_available_[column_num]) { continue; }
-		CostColumn cost_column{this, column_num};
+	for (int column_num{0}; column_num < Size(); ++column_num) {
+		CostColumn cost_column{&cost_matrix_, column_num};
 		auto min_it = min_element(cost_column.begin(), cost_column.end());
 		CostMatrixInteger min{*min_it};
 		assert(!min.IsInfinite());
-		for_each(cost_column.begin(), cost_column.end(), 
+		for_each(cost_column.begin(), cost_column.end(),
 				[&min](CostMatrixInteger& elt) { elt -= min; });
 		decremented += min();
 	}
@@ -82,118 +86,89 @@ int CostMatrix::ReduceMatrix() {
 	return decremented;
 }
 
-const CostMatrixInteger& CostMatrix::operator()(int row_num, 
-		int column_num) const { return cost_matrix_(row_num, column_num); }
-const CostMatrixInteger& CostMatrix::operator()(const Edge& e) const { 
-	return cost_matrix_(e.u, e.v); 
-}
+const CostMatrixInteger& CostMatrix::operator()(int row_num,
+		int column_num) const { return operator()(Edge{row_num, column_num}); }
+const CostMatrixInteger& CostMatrix::operator()(const Edge& e) const
+{ return cost_matrix_(GetCondensedRowNum(e.u), GetCondensedColumnNum(e.v)); }
 
-CostMatrixInteger& CostMatrix::operator()(int row_num, int column_num) {
-	return cost_matrix_(row_num, column_num);
-}
-CostMatrixInteger& CostMatrix::operator()(const Edge& e) { 
-	return cost_matrix_(e.u, e.v); 
-}
+CostMatrixInteger& CostMatrix::operator()(int row_num, int column_num)
+{ return operator()(Edge{row_num, column_num}); }
+CostMatrixInteger& CostMatrix::operator()(const Edge& e)
+{ return cost_matrix_(GetCondensedRowNum(e.u), GetCondensedColumnNum(e.v)); }
 
 
-CostRow CostMatrix::GetRow(int row_num) { return CostRow{this, row_num}; }
+CostRow CostMatrix::GetRow(int row_num)
+{ return CostRow{&cost_matrix_, GetCondensedRowNum(row_num)}; }
 
-CostColumn CostMatrix::GetColumn(int column_num) { 
-	return CostColumn{this, column_num};
+CostColumn CostMatrix::GetColumn(int column_num)
+{ return CostColumn{&cost_matrix_, GetCondensedColumnNum(column_num)}; }
+
+int CostMatrix::GetCondensedRowNum(int row_num) const {
+	if (!IsRowAvailable(row_num))
+	{ throw NotAvailableError{"This row number is not available"}; }
+	return row_mapping_.at(row_num);
 }
 
-const CostMatrixInteger& CostVector::operator[](int cell_num) const {
-	return (*cost_matrix_)(GetRow(cell_num), GetColumn(cell_num));
+int CostMatrix::GetCondensedColumnNum(int column_num) const {
+	if (!IsColumnAvailable(column_num))
+	{ throw NotAvailableError{"This column number is not available"}; }
+	return column_mapping_.at(column_num);
 }
 
-CostMatrixInteger& CostVector::operator[](int cell_num) {
-	return (*cost_matrix_)(GetRow(cell_num), GetColumn(cell_num));
-}
+const CostMatrixInteger& CostVector::operator[](int cell_num) const
+{ return (*cost_matrix_ptr_)(GetRow(cell_num), GetColumn(cell_num)); }
 
-bool CostVector::IsCellAvailable(int cell_num) const {
-	return operator[](cell_num).IsAvailable();
-}
+CostMatrixInteger& CostVector::operator[](int cell_num)
+{ return (*cost_matrix_ptr_)(GetRow(cell_num), GetColumn(cell_num)); }
 
-CostVector::Iterator::Iterator(CostVector* cost_vector) : 
-		cost_vector_{cost_vector}, traversing_cell_index_{0} { 
-	// move to the next element if the first is not available
-	if (!cost_vector_->IsCellAvailable(traversing_cell_index_)) {
-		MoveToNextCell(); 
-	}
-}
-	
-CostMatrixInteger& CostVector::Iterator::operator*() { 
-	assert(cost_vector_);
-	return (*cost_vector_)[traversing_cell_index_]; 
+CostMatrixInteger& CostVector::Iterator::operator*() {
+	assert(cost_vector_ptr_);
+	return (*cost_vector_ptr_)[traversing_cell_index_];
 }
 
 CostMatrixInteger* CostVector::Iterator::operator->() {
-	assert(cost_vector_);
-	return &(*cost_vector_)[traversing_cell_index_];
+	assert(cost_vector_ptr_);
+	return &(*cost_vector_ptr_)[traversing_cell_index_];
 }
 
 CostVector::Iterator CostVector::Iterator::operator++(int) {
 	int current_traversing_cell_index{traversing_cell_index_};
-	MoveToNextCell();
-	return Iterator{cost_vector_, current_traversing_cell_index};
+	if (traversing_cell_index_ < cost_vector_ptr_->Size())
+	{ ++traversing_cell_index_; }
+	return Iterator{cost_vector_ptr_, current_traversing_cell_index};
 }
 
 CostVector::Iterator& CostVector::Iterator::operator++() {
-	MoveToNextCell();
+	if (traversing_cell_index_ < cost_vector_ptr_->Size())
+	{ ++traversing_cell_index_; }
 	return *this;
 }
 
 bool CostVector::Iterator::operator==(const CostVector::Iterator& other) const {
-	return cost_vector_ == other.cost_vector_ && 
+	return cost_vector_ptr_ == other.cost_vector_ptr_ &&
 		traversing_cell_index_ == other.traversing_cell_index_;
 }
 
-bool CostVector::Iterator::operator!=(const CostVector::Iterator& other) const {
-	return !(operator==(other)); 
-}
+bool CostVector::Iterator::operator!=(const CostVector::Iterator& other) const
+{ return !(operator==(other)); }
 
-void CostVector::Iterator::MoveToNextCell() {
-	int vector_size{cost_vector_->cost_matrix_->size()};
-	while (++traversing_cell_index_ < vector_size &&
-			!cost_vector_->IsCellAvailable(traversing_cell_index_));
-}
+CostColumn::CostColumn(Matrix<CostMatrixInteger>* cost_matrix_ptr,
+	int column_num) : CostVector{cost_matrix_ptr}, column_num_{column_num} {}
 
-CostColumn::CostColumn(CostMatrix* cost_matrix, int column_num) : 
-		CostVector{cost_matrix}, column_num_{column_num} {
-	if (!IsColumnAvailable(column_num_)) {
-		throw NotAvailableError{"That column is not available"};
-	}
-}
+CostRow::CostRow(Matrix<CostMatrixInteger>* cost_matrix_ptr, int row_num) :
+		CostVector{cost_matrix_ptr}, row_num_{row_num} {}
 
-CostRow::CostRow(CostMatrix* cost_matrix_, int row_num) :
-		CostVector{cost_matrix_}, row_num_{row_num} {
-	if (!IsRowAvailable(row_num_)) {
-		throw NotAvailableError{"That row is not available"};
-	}
-}
+CostMatrixInteger& CostMatrix::Iterator::operator*()
+{ return (*cost_matrix_ptr_)(row_num_, column_num_); }
 
-CostMatrixInteger CostMatrix::Iterator::operator*() { 
-	return (*cost_matrix_)(row_num_, column_num_);
-}
-
-CostMatrixInteger* CostMatrix::Iterator::operator->() {
-	return &(*cost_matrix_)(row_num_, column_num_);
-}
-
-CostMatrix::Iterator::Iterator(CostMatrix* cost_matrix) :
-		cost_matrix_{cost_matrix}, row_num_{0}, column_num_{0} {
-	// move to the next element if the first one isn't available
-	if (!(*cost_matrix_)(row_num_, column_num_).IsAvailable()) { 
-		MoveToNextCell();
-	}
-}
+CostMatrixInteger* CostMatrix::Iterator::operator->()
+{ return &(*cost_matrix_ptr_)(row_num_, column_num_); }
 
 CostMatrix::Iterator CostMatrix::Iterator::operator++(int) {
 	int current_row_num{row_num_};
 	int current_column_num{column_num_};
 	MoveToNextCell();
-	return CostMatrix::Iterator{cost_matrix_, current_row_num, 
-		current_column_num};
+	return Iterator{cost_matrix_ptr_, current_row_num, current_column_num};
 }
 
 CostMatrix::Iterator& CostMatrix::Iterator::operator++() {
@@ -202,24 +177,31 @@ CostMatrix::Iterator& CostMatrix::Iterator::operator++() {
 }
 
 bool CostMatrix::Iterator::operator==(const CostMatrix::Iterator& other) {
-	return cost_matrix_ == other.cost_matrix_ &&
+	return cost_matrix_ptr_ == other.cost_matrix_ptr_ &&
 		column_num_ == other.column_num_ && row_num_ == other.row_num_;
 }
 
-bool CostMatrix::Iterator::operator!=(const CostMatrix::Iterator& other) {
-	return !(operator==(other));
-}
+bool CostMatrix::Iterator::operator!=(const CostMatrix::Iterator& other)
+{ return !(operator==(other)); }
 
 void CostMatrix::Iterator::MoveToNextCell() {
-	do {
-		// column_num_ wraps around
-		column_num_ = (column_num_ + 1) % cost_matrix_->size();
-		if (column_num_ == 0) { ++row_num_; }
-	// move while the iterator is not at the end and the cell is not available
-	} while (!IsAtEndOfMatrix() && 
-			!(*cost_matrix_)(row_num_, column_num_).IsAvailable());
+	// check if at end of matrix
+	if (row_num_ == cost_matrix_ptr_->GetNumRows() && column_num_ == 0)
+	{ return; }
+
+	// update row and column number, so column_num_ wraps around
+	column_num_ = (column_num_ + 1) % cost_matrix_ptr_->GetNumColumns();
+	if (column_num_ == 0) { ++row_num_; }
 }
 
-bool CostMatrix::Iterator::IsAtEndOfMatrix() const {
-	return row_num_ == cost_matrix_->size() && column_num_ == 0;
+unordered_map<int, int> MakeVectorMapping(const vector<bool>& available) {
+	int condensed_matrix_current_cell{0};
+	unordered_map<int, int> mapping;
+
+	// make mapping "actual row/column" => "condensed matrix row/column"
+	for (int cell_num{0}; cell_num < int(available.size()); ++cell_num) {
+		if (!available[cell_num]) { continue; }
+		mapping[cell_num] = condensed_matrix_current_cell++;
+	}
+	return mapping;
 }
