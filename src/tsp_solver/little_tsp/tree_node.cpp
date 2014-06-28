@@ -28,13 +28,9 @@ using std::vector;
 
 const int infinity{numeric_limits<int>::max()};
 
-/*
-TreeNode::TreeNode() : next_edge_{-1, -1}, found_lb_and_edge_{false},
-	has_exclude_branch_{false}, lower_bound_{0} {} */
-
 TreeNode::TreeNode(const Graph& costs) : graph_ptr_{&costs}, 
 		next_edge_{-1, -1}, found_lb_and_edge_{false}, 
-		has_exclude_branch_{false}, lower_bound_{0} {
+		has_exclude_branch_{false}, lower_bound_{infinity} {
 	// exclude all cells along the diagonal, we don't want self-loops
 	for (int diag{0}; diag < graph_ptr_->GetNumVertices(); ++diag) {
 		exclude_.push_back({diag, diag});
