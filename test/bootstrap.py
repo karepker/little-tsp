@@ -23,23 +23,24 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--size', nargs='?', default=DEFAULT_SIZE,
         type=int, help='Size of the map to use')
     parser.add_argument('-n', '--num', nargs='?', default=DEFAULT_NUM_CASES,
-            help='Number of test cases to utility', type=int)
+            help='Number of test cases to generate', type=int)
 
     args = parser.parse_args()
 
     # remove old test cases, utility new cases and bootstrap them
     utility.remove_old_cases()
+    utility.build_project()
     for case_filename in utility.write_cases(args.num, args.points, args.size):
 
         # run both naive tsp and little tsp
-        with open(case_filename, 'r') as case_file, open(NAIVE_FILENAME, 
+        with open(case_filename, 'r') as case_file, open(NAIVE_FILENAME,
                 'w') as naive_file:
-                naive_process = subprocess.Popen([utility.project_binary, 
+                naive_process = subprocess.Popen([utility.project_binary,
                     '-m', 'NAIVETSP'], stdin=case_file, stdout=naive_file)
 
         with open(case_filename, 'r') as case_file, open(
                 OPT_FILENAME, 'w') as opt_file:
-                opt_process = subprocess.Popen([utility.project_binary, 
+                opt_process = subprocess.Popen([utility.project_binary,
                     '-m', 'OPTTSP'], stdin=case_file, stdout=opt_file)
 
         # wait for the processes to finish before reading output
@@ -52,6 +53,6 @@ if __name__ == '__main__':
             opt_distance = int(opt_file.readline())
 
         if naive_distance != opt_distance:
-            print("Test %d fails. Naive distance: %d. Opt distance: %d." %
-                    case_num, naive_distance, opt_distance)
+            print('Test %s fails. Naive distance: %d. Opt distance: %d.' %
+                    (case_filename, naive_distance, opt_distance))
             break

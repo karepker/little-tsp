@@ -1,16 +1,26 @@
-#! /usr/bin/python3
+#! /usr/bin/env python3
 
 import argparse
 import os
-import random 
+import random
 import re
+import subprocess
 
+BUILD_DIR_NAME = "build"
 FILE_PREFIX = "generated-case-"
 FILE_SUFFIX = ".txt"
 
 script_dir = os.path.abspath(os.path.dirname(__file__))
 project_dir = os.path.abspath(os.path.join(script_dir, os.pardir))
-project_binary = os.path.join(project_dir, 'littletsp')
+build_dir = os.path.abspath(os.path.join(project_dir, BUILD_DIR_NAME))
+project_binary = os.path.join(build_dir, 'src', 'littletsp')
+
+def build_project():
+    """
+    Builds the cmake project
+    """
+    make_process = subprocess.Popen(['make'], cwd=build_dir)
+    make_process.wait()
 
 def get_case_num(case_filename):
     """
@@ -19,11 +29,11 @@ def get_case_num(case_filename):
     Args:
         case_filename (string): The filename of the case for which to find the
         number
-    
+
     Returns:
         Integer number of case
     """
-    regex_string = ''.join([r'.*', FILE_PREFIX, r'(?P<case_num>\d+)', 
+    regex_string = ''.join([r'.*', FILE_PREFIX, r'(?P<case_num>\d+)',
         FILE_SUFFIX])
     case_num_match = re.search(regex_string, case_filename)
     return int(case_num_match.group('case_num'))
@@ -32,7 +42,7 @@ def remove_old_cases():
     """
     Removes old generated cases
     """
-    generated_case_regex = re.compile(''.join([FILE_PREFIX, r'\d+', 
+    generated_case_regex = re.compile(''.join([FILE_PREFIX, r'\d+',
         FILE_SUFFIX]))
     test_dir = os.path.join(project_dir, 'test')
     for test_case in os.listdir(test_dir):
@@ -41,7 +51,7 @@ def remove_old_cases():
 
 def find_starting_prefix():
     """
-    Determines the high numbered test case present in the form 
+    Determines the high numbered test case present in the form
     '<FILE_PREFIX>\d+<FILE_SUFFIX>'
 
     Returns:
@@ -49,7 +59,7 @@ def find_starting_prefix():
     """
     # find starting prefix of file
     start_case = 0
-    while os.path.exists(os.path.join(script_dir, ''.join([FILE_PREFIX, 
+    while os.path.exists(os.path.join(script_dir, ''.join([FILE_PREFIX,
         str(start_case), FILE_SUFFIX]))):
         start_case += 1
     return start_case
@@ -68,7 +78,7 @@ def write_case(case_num, num_points, map_size):
         Name of file written to
     """
     # make the file and choose number of points to write
-    case_file_name = os.path.join(script_dir, ''.join([FILE_PREFIX, 
+    case_file_name = os.path.join(script_dir, ''.join([FILE_PREFIX,
         str("%02d" % case_num), FILE_SUFFIX]))
     with open(case_file_name, mode = 'w') as case_file:
         num_points = random.randint(num_points[0], num_points[1])

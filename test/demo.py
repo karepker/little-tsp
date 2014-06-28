@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import argparse
 import os
@@ -40,22 +40,22 @@ if __name__ == '__main__':
             description='utility test cases in Manhattan Graph format')
     parser.add_argument('-p', '--points', nargs=2, type=int,
         default=[DEFAULT_NUM_POINTS_START, DEFAULT_NUM_POINTS_END],
-        help="Range of number of points per test case")
+        help='Range of number of points per test case')
     parser.add_argument('-s', '--size', nargs='?', default=DEFAULT_SIZE,
-        type=int, help="Size of the map to use")
+        type=int, help='Size of the map to use')
     parser.add_argument('-n', '--num', nargs='?', default=DEFAULT_NUM_CASES,
-        help="Number of test cases to utility", type=int)
+        help='Number of test cases to generate', type=int)
 
     args = parser.parse_args()
 
     # run the binary on all the cases
-    subprocess.Popen('make', cwd=utility.project_dir, stdout=subprocess.DEVNULL)
     utility.remove_old_cases()
+    utility.build_project()
     header_format = "{:>5} | {:>16} | {:>16} | {:>16} | {:>16}"
-    print(header_format.format("Case", "Naive Time (s)", "Optimal Time (s)", 
-        "Difference (s)", "Speedup "))
-    print("{:->5}-+-{:->16}-+-{:->16}-+-{:->16}-+-{:->16}".format("", "", "",
-        "", ""))
+    print(header_format.format('Case', 'Naive Time (s)', 'Optimal Time (s)', 
+        'Difference (s)', 'Speedup '))
+    print('{:->5}-+-{:->16}-+-{:->16}-+-{:->16}-+-{:->16}'.format('', '', '',
+        '', ''))
     for case_filename in utility.write_cases(args.num, args.points, args.size):
 
         # benchmark naive and optimal solutions
@@ -71,6 +71,6 @@ if __name__ == '__main__':
         else:
             speedup = 0
         case_num = utility.get_case_num(case_filename)
-        stats = "{:>5} | {:>16.4} | {:>16.4} | {:>16.4} | {:>15.4}x".format(
+        stats = '{:>5} | {:>16.4} | {:>16.4} | {:>16.4} | {:>15.4}x'.format(
                 case_num, naive_time, opt_time, diff, speedup)
         print(stats)
