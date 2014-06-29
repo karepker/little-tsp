@@ -67,8 +67,8 @@ string ManhattanGraph::Describe() const {
 	ss << endl;
 	for(int row = 0; row < num_vertices_; ++row) {
 		ss << " " << row << " ";
-		for(int col = 0; col < num_vertices_; ++col) { 
-			ss << operator()(row, col) << " "; 
+		for(int col = 0; col < num_vertices_; ++col) {
+			ss << operator()(row, col) << " ";
 		}
 		ss << endl;
 	}
@@ -78,10 +78,10 @@ string ManhattanGraph::Describe() const {
 int ManhattanGraph::GetEdgeWeight(int from, int to) const {
 	if (from < 0 || from > num_vertices_ || to < 0 || to > num_vertices_) {
 		stringstream msg;
-		msg << "Bad from or to provided: (" << from << ", " << to << 
+		msg << "Bad from or to provided: (" << from << ", " << to <<
 			") limit is: " << num_vertices_ << endl;
 		throw ImplementationError{msg.str().c_str()};
 	}
-	return abs(vertices_[from].x - vertices_[to].x) + 
+	return abs(vertices_[from].x - vertices_[to].x) +
 		abs(vertices_[from].y - vertices_[to].y);
 }

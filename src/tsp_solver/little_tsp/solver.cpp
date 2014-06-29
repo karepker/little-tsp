@@ -1,27 +1,30 @@
 #include "tsp_solver/little_tsp/solver.hpp"
 
+#include <cassert>
+
+#include <iostream>
 #include <limits>
 #include <stack>
-
-#include <cassert>
 
 #include "graph/graph.hpp"
 #include "path.hpp"
 #include "tsp_solver/little_tsp/tree_node.hpp"
 
-using std::stack;
+using std::cout;
+using std::endl;
 using std::numeric_limits;
+using std::stack;
 
 const int infinity{numeric_limits<int>::max()};
 
 static bool EvaluateNode(TreeNode& node, TreeNode& smallest, int upper_bound);
 
-Path LittleTSPSolver::Solve(const Graph& graph) const {
-	return Solve(graph, infinity);
-}
+Path LittleTSPSolver::Solve(const Graph& graph) const
+{ return Solve(graph, infinity); }
 
 // method to compute optimal TSP
 Path LittleTSPSolver::Solve(const Graph& graph, int upper_bound) const {
+
 	// case: 0 vertices
 	if (graph.GetNumVertices() == 0) { return Path{}; }
 
@@ -36,18 +39,17 @@ Path LittleTSPSolver::Solve(const Graph& graph, int upper_bound) const {
 	TreeNode root{graph};
 
 	// set up for the branching and bounding
-	stack<TreeNode> nodes; 
+	stack<TreeNode> nodes;
 	TreeNode smallest{graph};
 
 	// add the first node
 	if (EvaluateNode(root, smallest, upper_bound)) { nodes.push(root); }
-	
+
 	// branch and bound, baby, branch and bound
 	while (!nodes.empty()) {
 		// set upper bound
-		if (smallest.GetLowerBound() < upper_bound) { 
-			upper_bound = smallest.GetLowerBound();
-		}
+		if (smallest.GetLowerBound() < upper_bound)
+		{ upper_bound = smallest.GetLowerBound(); }
 
 		// get the current node and remove it from the stack
 		TreeNode current{nodes.top()};
@@ -59,19 +61,17 @@ Path LittleTSPSolver::Solve(const Graph& graph, int upper_bound) const {
 		if (current.HasExcludeBranch()) {
 			TreeNode exclude{current};
 			exclude.AddExclude(exclude.GetNextEdge());
-			if (EvaluateNode(exclude, smallest, upper_bound)) {
-				nodes.push(exclude);
-			}
+			if (EvaluateNode(exclude, smallest, upper_bound))
+			{ nodes.push(exclude); }
 		}
 
 		// 2. Include the highest penalty, lowest cost edge
 		TreeNode include{current};
 		include.AddInclude(include.GetNextEdge());
-		if (EvaluateNode(include, smallest, upper_bound)) { 
-			nodes.push(include);
-		}
+		if (EvaluateNode(include, smallest, upper_bound))
+		{ nodes.push(include); }
 	}
-	
+
 	// return the shortest path
 	assert(smallest.GetLowerBound() <= upper_bound);
 	return smallest.GetTSPPath();
@@ -83,7 +83,7 @@ bool EvaluateNode(TreeNode& node, TreeNode& smallest, int upper_bound) {
 	// evaluate the node, add it to the list only if its 
 	// lower bound is strictly less than the upper bound
 	if (node.CalcLBAndNextEdge()) { return node.GetLowerBound() < upper_bound; }
-	
+
 	// otherwise, a complete TSP path was found
 	// set the solution to smallest if it less than smallest's length
 	if (node.GetLowerBound() < smallest.GetLowerBound()) { smallest = node; }

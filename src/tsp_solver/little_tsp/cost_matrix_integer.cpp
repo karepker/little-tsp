@@ -12,7 +12,7 @@ const int infinity{numeric_limits<int>::max()};
 CostMatrixInteger::CostMatrixInteger() : value_{-1}, infinite_{false},
 	edge_{-1, -1} {}
 
-CostMatrixInteger::CostMatrixInteger(int value, Edge edge) : value_{value}, 
+CostMatrixInteger::CostMatrixInteger(int value, Edge edge) : value_{value},
 	infinite_{false}, edge_{edge} {}
 
 int CostMatrixInteger::operator()() const {

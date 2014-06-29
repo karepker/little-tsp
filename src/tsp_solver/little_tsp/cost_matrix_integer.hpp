@@ -16,7 +16,7 @@ public:
 	CostMatrixInteger();
 	// creates an available, finite integer with the given value
 	CostMatrixInteger(int value, Edge e);
-	
+
 	void SetInfinite() { infinite_ = true; }
 
 	// returns the value, throws an error if not available

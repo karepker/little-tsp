@@ -29,12 +29,12 @@ public:
 	// branching methods
 	bool HasExcludeBranch() const { return has_exclude_branch_; }
 	Edge GetNextEdge() const { return next_edge_; }
-	
+
 	// calculate the lower bound and the next edge, return true if a next edge
 	// was found
 	bool CalcLBAndNextEdge();
 	Path GetTSPPath() const;
-	
+
 	// ostream operator
 	friend std::ostream& operator<<(std::ostream& os, const TreeNode& p);
 

@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
 		cout << "Implementation Error: " << ie.what() << endl;
 		return 2;
 	} catch (...) {
-		cout << "Unknown Error!" << endl; 
+		cout << "Unknown Error!" << endl;
 		return 3;
 	}
 

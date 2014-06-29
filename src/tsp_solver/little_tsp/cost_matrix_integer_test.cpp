@@ -11,7 +11,7 @@ const Edge edge{0, 0};
 
 class CostMatrixIntegerTest : public ::testing::Test {
 public:
-	CostMatrixIntegerTest() : c2{c2_value, edge}, c3{-1, edge}, 
+	CostMatrixIntegerTest() : c2{c2_value, edge}, c3{-1, edge},
 		c4{c4_value, edge} {
 		// set c3 as unavailable and infinite, set c3 as infinite
 		c3.SetInfinite();

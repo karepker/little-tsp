@@ -1,4 +1,4 @@
-#include "cost_matrix.hpp"
+#include "tsp_solver/little_tsp/cost_matrix.hpp"
 
 #include <cassert>
 
@@ -20,16 +20,18 @@ using CostVector = CostMatrix::CostVector;
 using CostRow = CostMatrix::CostRow;
 using CostColumn = CostMatrix::CostColumn;
 
-static unordered_map<int, int> MakeVectorMapping(const vector<bool>& available);
+static vector<int> MakeVectorMapping(const vector<bool>& available);
 
 CostMatrix::CostMatrix(const Graph& graph, const vector<Edge>& include,
 		const vector<Edge>& exclude) {
-	// parse included edges first
 	vector<bool> row_available(graph.GetNumVertices(), true);
 	vector<bool> column_available(graph.GetNumVertices(), true);
+	int available_rows{graph.GetNumVertices()};
+	// parse included edges first
 	for (const Edge& e : include) {
 		row_available[e.u] = false;
 		column_available[e.v] = false;
+		--available_rows;
 	}
 
 	// We'll just skip adding the rows/columns that are unavailable to the
@@ -38,13 +40,13 @@ CostMatrix::CostMatrix(const Graph& graph, const vector<Edge>& include,
 	// row/column numbers
 	row_mapping_ = MakeVectorMapping(row_available);
 	column_mapping_ = MakeVectorMapping(column_available);
-	cost_matrix_.SetSize(row_mapping_.size(), column_mapping_.size());
+	cost_matrix_.SetSize(available_rows, available_rows);
 
 	// create the condensed matrix
 	for (int i{0}; i < graph.GetNumVertices(); ++i) {
-		if (!IsRowAvailable(i)) { continue; }
+		if (!row_available[i]) { continue; }
 		for (int j{0}; j < graph.GetNumVertices(); ++j) {
-			if (!IsColumnAvailable(j)) { continue; }
+			if (!column_available[j]) { continue; }
 			(*this)(i, j) = CostMatrixInteger{graph(i, j), Edge{i, j}};
 		}
 	}
@@ -106,13 +108,13 @@ CostColumn CostMatrix::GetColumn(int column_num)
 int CostMatrix::GetCondensedRowNum(int row_num) const {
 	if (!IsRowAvailable(row_num))
 	{ throw NotAvailableError{"This row number is not available"}; }
-	return row_mapping_.at(row_num);
+	return row_mapping_[row_num];
 }
 
 int CostMatrix::GetCondensedColumnNum(int column_num) const {
 	if (!IsColumnAvailable(column_num))
 	{ throw NotAvailableError{"This column number is not available"}; }
-	return column_mapping_.at(column_num);
+	return column_mapping_[column_num];
 }
 
 const CostMatrixInteger& CostVector::operator[](int cell_num) const
@@ -194,9 +196,9 @@ void CostMatrix::Iterator::MoveToNextCell() {
 	if (column_num_ == 0) { ++row_num_; }
 }
 
-unordered_map<int, int> MakeVectorMapping(const vector<bool>& available) {
+vector<int> MakeVectorMapping(const vector<bool>& available) {
 	int condensed_matrix_current_cell{0};
-	unordered_map<int, int> mapping;
+	vector<int> mapping(available.size(), -1);
 
 	// make mapping "actual row/column" => "condensed matrix row/column"
 	for (int cell_num{0}; cell_num < int(available.size()); ++cell_num) {

@@ -1,4 +1,4 @@
-#include "cost_matrix.hpp"
+#include "tsp_solver/little_tsp/cost_matrix.hpp"
 
 #include <algorithm>
 #include <iterator>
