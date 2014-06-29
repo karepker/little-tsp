@@ -27,20 +27,20 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # remove old test cases, utility new cases and bootstrap them
-    utility.remove_old_cases()
+    # remove old test cases, write new ones, and bootstrap them
+    utility.write_cases(args.num, args.points, args.size, overwrite=True)
     utility.build_project()
-    for case_filename in utility.write_cases(args.num, args.points, args.size):
+    for case_filename in utility.iterate_cases():
 
         # run both naive tsp and little tsp
         with open(case_filename, 'r') as case_file, open(NAIVE_FILENAME,
                 'w') as naive_file:
-                naive_process = subprocess.Popen([utility.project_binary,
+                naive_process = subprocess.Popen([utility.PROJECT_BINARY,
                     '-m', 'NAIVETSP'], stdin=case_file, stdout=naive_file)
 
         with open(case_filename, 'r') as case_file, open(
                 OPT_FILENAME, 'w') as opt_file:
-                opt_process = subprocess.Popen([utility.project_binary,
+                opt_process = subprocess.Popen([utility.PROJECT_BINARY,
                     '-m', 'OPTTSP'], stdin=case_file, stdout=opt_file)
 
         # wait for the processes to finish before reading output
