@@ -8,7 +8,7 @@ set(GMOCK_ROOT "$ENV{HOME}/links/thirdparty/gmock-1.7.0")
 
 # set compilation variables
 set(CXXFLAGS "-Wall -Werror -std=c++11")
-set(CXXFLAGS_RELEASE "${CXXFLAGS} -O3")
+set(CXXFLAGS_RELEASE "${CXXFLAGS} -O3 -DNDEBUG")
 set(CXXFLAGS_DEBUG "${CXXFLAGS} -g -O0")
 
 # add directory for project source files

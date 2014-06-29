@@ -1,4 +1,4 @@
-set(SRCS 
+set(SRCS
 	edge.cpp
 	graph/factory.cpp
 	graph/graph.cpp
@@ -30,7 +30,7 @@ include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR})
 
 add_library(${DEBUG_OBJECT_LIBRARY} OBJECT ${SRCS})
-add_executable(${DEBUG_BINARY} 
+add_executable(${DEBUG_BINARY}
 	${MAIN_SRC}
 	$<TARGET_OBJECTS:${DEBUG_OBJECT_LIBRARY}>)
 add_executable(${RELEASE_BINARY} ${MAIN_SRC} ${SRCS})
@@ -60,7 +60,7 @@ if (unit_tests)
 		$<TARGET_OBJECTS:${DEBUG_OBJECT_LIBRARY}>)
 
 	set_target_properties(${UNITTEST_BINARY} PROPERTIES COMPILE_FLAGS "${CXXFLAGS_DEBUG}")
-	target_link_libraries(${UNITTEST_BINARY} 
+	target_link_libraries(${UNITTEST_BINARY}
 		gmock_main
 		pthread)
 
