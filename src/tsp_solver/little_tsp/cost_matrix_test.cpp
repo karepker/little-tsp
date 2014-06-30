@@ -23,6 +23,11 @@ using std::transform;
 using std::unique_ptr;
 using std::vector;
 
+template <typename T>
+using CostVector = CostMatrix::CostVector<T>;
+using Row = CostMatrix::Row;
+using Column = CostMatrix::Column;
+
 using ::testing::Return;
 
 const int infinity{numeric_limits<int>::max()};
@@ -39,7 +44,7 @@ static void CompareWithVector(T matrix, vector<int> expected);
 
 class CostMatrixTest : public ::testing::Test {
 public:
-	CostMatrixTest(); 
+	CostMatrixTest();
 protected:
 	// I need unique_ptrs because graph functions get called in the constructor
 	// of matrix, and I need time to set expectations for mock calls
@@ -88,9 +93,9 @@ TEST_F(CostMatrixTest, GetRow) {
 	EXPECT_TRUE(matrix1_ptr->IsRowAvailable(1));
 	EXPECT_TRUE(matrix1_ptr->IsRowAvailable(2));
 
-	CostMatrix::CostRow row0{matrix1_ptr->GetRow(0)};
-	CostMatrix::CostRow row1{matrix1_ptr->GetRow(1)};
-	CostMatrix::CostRow row2{matrix1_ptr->GetRow(2)};
+	CostMatrix::CostVector<Row> row0{matrix1_ptr->GetRow(0)};
+	CostMatrix::CostVector<Row> row1{matrix1_ptr->GetRow(1)};
+	CostMatrix::CostVector<Row> row2{matrix1_ptr->GetRow(2)};
 	CompareWithVector(row0, {infinity, 0, 2});
 	CompareWithVector(row1, {0, 2, 0});
 	CompareWithVector(row2, {0, 2, 0});
@@ -105,8 +110,8 @@ TEST_F(CostMatrixTest, GetColumn) {
 	EXPECT_TRUE(matrix2_ptr->IsColumnAvailable(0));
 	EXPECT_TRUE(matrix2_ptr->IsColumnAvailable(1));
 	EXPECT_FALSE(matrix2_ptr->IsColumnAvailable(2));
-	CostMatrix::CostColumn column0{matrix2_ptr->GetColumn(0)};
-	CostMatrix::CostColumn column1{matrix2_ptr->GetColumn(1)};
+	CostMatrix::CostVector<Column> column0{matrix2_ptr->GetColumn(0)};
+	CostMatrix::CostVector<Column> column1{matrix2_ptr->GetColumn(1)};
 	EXPECT_THROW(matrix2_ptr->GetColumn(2), NotAvailableError);
 	CompareWithVector(column0, {0, 0});
 	CompareWithVector(column1, {0, 0});

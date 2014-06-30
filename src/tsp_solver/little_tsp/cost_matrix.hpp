@@ -5,9 +5,9 @@
 #include <vector>
 
 #include "matrix.hpp"
+#include "tsp_solver/little_tsp/cost_matrix_integer.hpp"
 
 class Graph;
-class CostMatrixInteger;
 struct Edge;
 
 // information about the useable matrix
@@ -31,23 +31,26 @@ public:
 
 	int Size() const { return cost_matrix_.GetNumRows(); }
 
+	template <typename T>
 	class CostVector;
-	class CostRow;
-	class CostColumn;
 	// these classes need to be able to share data with each other because they
 	// are very intimately related
-	friend class CostVector;
+	class Column;
+	class Row;
+	friend class CostVector<Column>;
+	friend class CostVector<Row>;
 
-	CostRow GetRow(int row_num);
-	CostColumn GetColumn(int column_num);
+	CostVector<Row> GetRow(int row_num);
+	CostVector<Column> GetColumn(int column_num);
 
 	// encapsulation of cost information about either a single row or a column
 	// defines iterator which allows easier traversal and more use of STL
+	template <typename T>
 	class CostVector {
 	public:
-		CostVector() : cost_matrix_ptr_{nullptr} {}
-		explicit CostVector(Matrix<CostMatrixInteger>* cost_matrix_ptr) :
-			cost_matrix_ptr_{cost_matrix_ptr} {}
+		CostVector(Matrix<CostMatrixInteger>* cost_matrix_ptr,
+				const T orientation) : cost_matrix_ptr_{cost_matrix_ptr},
+			orientation_{orientation} {}
 
 		const CostMatrixInteger& operator[](int cell_num) const;
 		CostMatrixInteger& operator[](int cell_num);
@@ -88,35 +91,30 @@ public:
 		Iterator begin() { return Iterator{this}; }
 		Iterator end() { return Iterator{this, Size()}; }
 
-	protected:
-		// define interface for derived classes because CostVector doesn't know
-		// if it's a row or column
-		virtual int GetRow(int cell_num) const = 0;
-		virtual int GetColumn(int cell_num) const = 0;
-
 	private:
 		Matrix<CostMatrixInteger>* cost_matrix_ptr_;
+		const T orientation_;  // either Row or Column
 	};
 
-	class CostColumn : public CostVector {
+	class Column {
 	public:
-		CostColumn(Matrix<CostMatrixInteger>* cost_matrix_ptr, int column_num);
+		explicit Column(int column_num) : column_num_{column_num} {}
+
+		int GetRow(int cell_num) const { return cell_num; }
+		int GetColumn(int) const { return column_num_; }
 
 	private:
-		int GetRow(int cell_num) const override { return cell_num; }
-		int GetColumn(int) const override { return column_num_; }
-
 		int column_num_;
 	};
 
-	class CostRow : public CostVector {
+	class Row {
 	public:
-		CostRow(Matrix<CostMatrixInteger>* cost_matrix_ptr, int row_num);
+		explicit Row(int row_num) : row_num_{row_num} {}
+
+		int GetColumn(int cell_num) const { return cell_num; }
+		int GetRow(int) const { return row_num_; }
 
 	private:
-		int GetColumn(int cell_num) const override { return cell_num; }
-		int GetRow(int) const override { return row_num_; }
-
 		int row_num_;
 	};
 
@@ -164,6 +162,60 @@ private:
 	std::vector<int> row_mapping_;
 	std::vector<int> column_mapping_;
 };
+
+template <typename T>
+const CostMatrixInteger& CostMatrix::CostVector<T>::operator[](
+		int cell_num) const {
+	return (*cost_matrix_ptr_)(orientation_.GetRow(cell_num),
+		orientation_.GetColumn(cell_num));
+}
+
+template <typename T>
+CostMatrixInteger& CostMatrix::CostVector<T>::operator[](int cell_num) {
+	return (*cost_matrix_ptr_)(orientation_.GetRow(cell_num),
+			orientation_.GetColumn(cell_num));
+}
+
+template <typename T>
+CostMatrixInteger& CostMatrix::CostVector<T>::Iterator::operator*() {
+	assert(cost_vector_ptr_);
+	return (*cost_vector_ptr_)[traversing_cell_index_];
+}
+
+template <typename T>
+CostMatrixInteger* CostMatrix::CostVector<T>::Iterator::operator->() {
+	assert(cost_vector_ptr_);
+	return &(*cost_vector_ptr_)[traversing_cell_index_];
+}
+
+template <typename T>
+typename CostMatrix::CostVector<T>::Iterator
+CostMatrix::CostVector<T>::Iterator::operator++(int) {
+	int current_traversing_cell_index{traversing_cell_index_};
+	if (traversing_cell_index_ < cost_vector_ptr_->Size())
+	{ ++traversing_cell_index_; }
+	return Iterator{cost_vector_ptr_, current_traversing_cell_index};
+}
+
+template <typename T>
+typename CostMatrix::CostVector<T>::Iterator&
+CostMatrix::CostVector<T>::Iterator::operator++() {
+	if (traversing_cell_index_ < cost_vector_ptr_->Size())
+	{ ++traversing_cell_index_; }
+	return *this;
+}
+
+template <typename T>
+bool CostMatrix::CostVector<T>::Iterator::operator==(
+		const CostVector::Iterator& other) const {
+	return cost_vector_ptr_ == other.cost_vector_ptr_ &&
+		traversing_cell_index_ == other.traversing_cell_index_;
+}
+
+template <typename T>
+bool CostMatrix::CostVector<T>::Iterator::operator!=(
+		const CostVector::Iterator& other) const
+{ return !(operator==(other)); }
 
 
 #endif  // LITTLE_TSP_COST_MATRIX_H

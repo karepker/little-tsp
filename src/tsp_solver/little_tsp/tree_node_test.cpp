@@ -183,7 +183,7 @@ TEST_F(TreeNodeTest, CalcLBAndNextEdgeInclude) {
 	EXPECT_EQ(63, tsp_path.length);
 }
 
-TreeNode TreeNodeTest::TestIncludeBranch(TreeNode& parent, Edge e, 
+TreeNode TreeNodeTest::TestIncludeBranch(TreeNode& parent, Edge e,
 		int lower_bound) {
 	EXPECT_TRUE(parent.CalcLBAndNextEdge());
 	EXPECT_TRUE(parent.HasExcludeBranch());
@@ -194,7 +194,7 @@ TreeNode TreeNodeTest::TestIncludeBranch(TreeNode& parent, Edge e,
 	return node;
 }
 
-TreeNode TreeNodeTest::TestExcludeBranch(TreeNode& parent, Edge e, 
+TreeNode TreeNodeTest::TestExcludeBranch(TreeNode& parent, Edge e,
 		int lower_bound) {
 	EXPECT_TRUE(parent.CalcLBAndNextEdge());
 	EXPECT_TRUE(parent.HasExcludeBranch());

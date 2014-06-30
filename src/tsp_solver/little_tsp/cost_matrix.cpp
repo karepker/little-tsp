@@ -16,9 +16,10 @@ using std::min_element;
 using std::unordered_map;
 using std::vector;
 
-using CostVector = CostMatrix::CostVector;
-using CostRow = CostMatrix::CostRow;
-using CostColumn = CostMatrix::CostColumn;
+template <typename T>
+using CostVector = CostMatrix::CostVector<T>;
+using Row = CostMatrix::Row;
+using Column = CostMatrix::Column;
 
 static vector<int> MakeVectorMapping(const vector<bool>& available);
 
@@ -64,7 +65,7 @@ int CostMatrix::ReduceMatrix() {
 
 	// reduce all the rows
 	for (int row_num{0}; row_num < Size(); ++row_num) {
-		CostRow cost_row{&cost_matrix_, row_num};
+		CostVector<Row> cost_row{&cost_matrix_, Row{row_num}};
 		auto min_it = min_element(cost_row.begin(), cost_row.end());
 		assert(min_it != cost_row.end());
 		CostMatrixInteger min{*min_it};
@@ -76,7 +77,8 @@ int CostMatrix::ReduceMatrix() {
 
 	// reduce all the columns
 	for (int column_num{0}; column_num < Size(); ++column_num) {
-		CostColumn cost_column{&cost_matrix_, column_num};
+		CostVector<Column> cost_column{&cost_matrix_,
+			Column{column_num}};
 		auto min_it = min_element(cost_column.begin(), cost_column.end());
 		CostMatrixInteger min{*min_it};
 		assert(!min.IsInfinite());
@@ -99,11 +101,15 @@ CostMatrixInteger& CostMatrix::operator()(const Edge& e)
 { return cost_matrix_(GetCondensedRowNum(e.u), GetCondensedColumnNum(e.v)); }
 
 
-CostRow CostMatrix::GetRow(int row_num)
-{ return CostRow{&cost_matrix_, GetCondensedRowNum(row_num)}; }
+CostVector<Row> CostMatrix::GetRow(int row_num) {
+	return CostVector<Row>{&cost_matrix_,
+		Row{GetCondensedRowNum(row_num)}};
+}
 
-CostColumn CostMatrix::GetColumn(int column_num)
-{ return CostColumn{&cost_matrix_, GetCondensedColumnNum(column_num)}; }
+CostVector<Column> CostMatrix::GetColumn(int column_num) {
+	return CostVector<Column>{&cost_matrix_,
+		Column{GetCondensedColumnNum(column_num)}};
+}
 
 int CostMatrix::GetCondensedRowNum(int row_num) const {
 	if (!IsRowAvailable(row_num))
@@ -116,49 +122,6 @@ int CostMatrix::GetCondensedColumnNum(int column_num) const {
 	{ throw NotAvailableError{"This column number is not available"}; }
 	return column_mapping_[column_num];
 }
-
-const CostMatrixInteger& CostVector::operator[](int cell_num) const
-{ return (*cost_matrix_ptr_)(GetRow(cell_num), GetColumn(cell_num)); }
-
-CostMatrixInteger& CostVector::operator[](int cell_num)
-{ return (*cost_matrix_ptr_)(GetRow(cell_num), GetColumn(cell_num)); }
-
-CostMatrixInteger& CostVector::Iterator::operator*() {
-	assert(cost_vector_ptr_);
-	return (*cost_vector_ptr_)[traversing_cell_index_];
-}
-
-CostMatrixInteger* CostVector::Iterator::operator->() {
-	assert(cost_vector_ptr_);
-	return &(*cost_vector_ptr_)[traversing_cell_index_];
-}
-
-CostVector::Iterator CostVector::Iterator::operator++(int) {
-	int current_traversing_cell_index{traversing_cell_index_};
-	if (traversing_cell_index_ < cost_vector_ptr_->Size())
-	{ ++traversing_cell_index_; }
-	return Iterator{cost_vector_ptr_, current_traversing_cell_index};
-}
-
-CostVector::Iterator& CostVector::Iterator::operator++() {
-	if (traversing_cell_index_ < cost_vector_ptr_->Size())
-	{ ++traversing_cell_index_; }
-	return *this;
-}
-
-bool CostVector::Iterator::operator==(const CostVector::Iterator& other) const {
-	return cost_vector_ptr_ == other.cost_vector_ptr_ &&
-		traversing_cell_index_ == other.traversing_cell_index_;
-}
-
-bool CostVector::Iterator::operator!=(const CostVector::Iterator& other) const
-{ return !(operator==(other)); }
-
-CostColumn::CostColumn(Matrix<CostMatrixInteger>* cost_matrix_ptr,
-	int column_num) : CostVector{cost_matrix_ptr}, column_num_{column_num} {}
-
-CostRow::CostRow(Matrix<CostMatrixInteger>* cost_matrix_ptr, int row_num) :
-		CostVector{cost_matrix_ptr}, row_num_{row_num} {}
 
 CostMatrixInteger& CostMatrix::Iterator::operator*()
 { return (*cost_matrix_ptr_)(row_num_, column_num_); }

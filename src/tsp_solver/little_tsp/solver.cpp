@@ -70,6 +70,7 @@ Path LittleTSPSolver::Solve(const Graph& graph, int upper_bound) const {
 		include.AddInclude(include.GetNextEdge());
 		if (EvaluateNode(include, smallest, upper_bound))
 		{ nodes.push(include); }
+
 	}
 
 	// return the shortest path

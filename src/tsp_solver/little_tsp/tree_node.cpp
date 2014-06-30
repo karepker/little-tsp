@@ -111,18 +111,19 @@ struct CostMatrixZero {
 class SetEdgeInfiniteTemporarily {
 public:
 	SetEdgeInfiniteTemporarily(CostMatrix& cost_matrix, const Edge& e) :
-			cost_matrix_{cost_matrix}, edge_{e}, finite_zero_{cost_matrix(e)} {
-		cost_matrix_(e).SetInfinite();
-	}
-	~SetEdgeInfiniteTemporarily() { cost_matrix_(edge_) = finite_zero_; }
+			cost_matrix_{cost_matrix}, edge_{e}
+	{ cost_matrix_(e).SetInfinite(); }
+	~SetEdgeInfiniteTemporarily() { cost_matrix_(edge_).SetFinite(); }
 
 private:
 	CostMatrix& cost_matrix_;
 	Edge edge_;
-	CostMatrixInteger finite_zero_;
 };
 
 bool TreeNode::CalcLBAndNextEdge() {
+	using Row = CostMatrix::Row;
+	using Column = CostMatrix::Column;
+
 	// create a cost matrix from information stored in the tree node, reduce it
 	// use current edges and reduced cost matrix to calculate lower bound
 	CostMatrix cost_matrix{*graph_ptr_, include_, exclude_};
@@ -146,8 +147,9 @@ bool TreeNode::CalcLBAndNextEdge() {
 		SetEdgeInfiniteTemporarily infinite_edge{cost_matrix, zero.edge};
 
 		// get the penalty in the row and column
-		CostMatrix::CostRow cost_row{cost_matrix.GetRow(zero.edge.u)};
-		CostMatrix::CostColumn cost_column{cost_matrix.GetColumn(zero.edge.v)};
+		CostMatrix::CostVector<Row> cost_row{cost_matrix.GetRow(zero.edge.u)};
+		CostMatrix::CostVector<Column> cost_column{
+			cost_matrix.GetColumn(zero.edge.v)};
 
 		auto row_it = min_element(cost_row.begin(), cost_row.end());
 		auto col_it = min_element(cost_column.begin(), cost_column.end());
@@ -166,10 +168,10 @@ bool TreeNode::CalcLBAndNextEdge() {
 			continue;
 		}
 
-		// 2. case when excluding the node creates a disconnected graph_
+		// 2. case when excluding the node creates a disconnected graph
+		// we must choose this edge and cannot branch
 		if (col_it->IsInfinite() != row_it->IsInfinite()) {
 			assert(cost_matrix.Size() != 2);
-			// we must choose this edge and cannot branch
 			next_edge_ = zero.edge;
 			has_exclude_branch_ = false;
 			return true;

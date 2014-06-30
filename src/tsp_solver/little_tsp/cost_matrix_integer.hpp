@@ -18,6 +18,7 @@ public:
 	CostMatrixInteger(int value, Edge e);
 
 	void SetInfinite() { infinite_ = true; }
+	void SetFinite() { infinite_ = false; }
 
 	// returns the value, throws an error if not available
 	int operator()() const;
