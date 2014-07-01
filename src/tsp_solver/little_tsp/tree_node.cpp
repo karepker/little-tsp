@@ -13,7 +13,7 @@
 #include "path.hpp"
 #include "tsp_solver/little_tsp/cost_matrix.hpp"
 #include "tsp_solver/little_tsp/cost_matrix_integer.hpp"
-#include "util.hpp"
+#include "tsp_solver/little_tsp/util.hpp"
 
 using std::back_inserter;
 using std::copy_if;
@@ -29,8 +29,7 @@ using std::vector;
 const int infinity{numeric_limits<int>::max()};
 
 TreeNode::TreeNode(const Graph& costs) : graph_ptr_{&costs},
-		next_edge_{-1, -1}, found_lb_and_edge_{false},
-		has_exclude_branch_{false}, lower_bound_{infinity} {
+		next_edge_{-1, -1}, has_exclude_branch_{false}, lower_bound_{infinity} {
 	// exclude all cells along the diagonal, we don't want self-loops
 	for (int diag{0}; diag < graph_ptr_->GetNumVertices(); ++diag) {
 		exclude_.push_back({diag, diag});
@@ -101,29 +100,7 @@ ostream& operator<<(ostream& os, const TreeNode& p) {
 	return os;
 }
 
-struct CostMatrixZero {
-	Edge edge;
-	int penalty;
-	bool operator<(const CostMatrixZero& other) const
-	{ return penalty < other.penalty; }
-};
-
-class SetEdgeInfiniteTemporarily {
-public:
-	SetEdgeInfiniteTemporarily(CostMatrix& cost_matrix, const Edge& e) :
-			cost_matrix_{cost_matrix}, edge_{e}
-	{ cost_matrix_(e).SetInfinite(); }
-	~SetEdgeInfiniteTemporarily() { cost_matrix_(edge_).SetFinite(); }
-
-private:
-	CostMatrix& cost_matrix_;
-	Edge edge_;
-};
-
 bool TreeNode::CalcLBAndNextEdge() {
-	using Row = CostMatrix::Row;
-	using Column = CostMatrix::Column;
-
 	// create a cost matrix from information stored in the tree node, reduce it
 	// use current edges and reduced cost matrix to calculate lower bound
 	CostMatrix cost_matrix{*graph_ptr_, include_, exclude_};
@@ -131,67 +108,16 @@ bool TreeNode::CalcLBAndNextEdge() {
 	lower_bound_ += cost_matrix.ReduceMatrix();
 
 	// find all the zeros in the matrix and copy them into the zeros vector
-	vector<CostMatrixZero> zeros;
-	vector<CostMatrixInteger> zero_cmis;
-	copy_if(cost_matrix.begin(), cost_matrix.end(), back_inserter(zero_cmis),
-		[](const CostMatrixInteger& cmi) { return cmi() == 0; });
-	transform(zero_cmis.begin(), zero_cmis.end(), back_inserter(zeros),
-		[](const CostMatrixInteger& cmi)
-		{ return CostMatrixZero{cmi.GetEdge(), 0}; });
-	assert(!zeros.empty());
+	vector<CostMatrixZero> zeros{cost_matrix.FindZerosAndPenalties()};
 
-	// get a penalty associated with each zero
-	for (CostMatrixZero& zero : zeros) {
-		// set the cell corresponding to the zero as infinite in the cost matrix
-		// so it is not chosen as the minimum element
-		SetEdgeInfiniteTemporarily infinite_edge{cost_matrix, zero.edge};
-
-		// get the penalty in the row and column
-		CostMatrix::CostVector<Row> cost_row{cost_matrix.GetRow(zero.edge.u)};
-		CostMatrix::CostVector<Column> cost_column{
-			cost_matrix.GetColumn(zero.edge.v)};
-
-		auto row_it = min_element(cost_row.begin(), cost_row.end());
-		auto col_it = min_element(cost_column.begin(), cost_column.end());
-		assert(col_it != cost_column.end() && row_it != cost_row.end());
-
-		// 3 cases
-		// 1. base case: 2 edges left to add. We need to know if penalty is zero
-		// or infinite so we can choose the two edges with the highest penalties
-		if (cost_matrix.Size() == 2) {
-			if (col_it->IsInfinite() || row_it->IsInfinite()) {
-				zero.penalty = infinity;
-			} else {
-				assert((*col_it)() == 0 && (*row_it)() == 0);
-				zero.penalty = 0;
-			}
-			continue;
-		}
-
-		// 2. case when excluding the node creates a disconnected graph
-		// we must choose this edge and cannot branch
-		if (col_it->IsInfinite() != row_it->IsInfinite()) {
-			assert(cost_matrix.Size() != 2);
-			next_edge_ = zero.edge;
-			has_exclude_branch_ = false;
-			return true;
-		}
-
-		// 3. normal case, there is both an include and exclude branch
-		zero.penalty = (*col_it)() + (*row_it)();
-	}
-
-	// finish handling base case in a separate function
+	// handle base case in a separate function
 	if (cost_matrix.Size() == 2) { return HandleBaseCase(cost_matrix, zeros); }
 
-	// set the next edge as the zero with the highest penalty
-	auto max_penalty_it = max_element(zeros.begin(), zeros.end());
-
-	// for any other case, set the next edge to branch on
-	// and set the flag that calculations have been completed
-	next_edge_ = max_penalty_it->edge;
-	found_lb_and_edge_ = true;
-	has_exclude_branch_ = true;
+	// for any other case, set the next edge as the zero with the highest 
+	// penalty and allow an exclude branch if the penalty is not infinite
+	assert(zeros.size() == 1);
+	next_edge_ = zeros[0].edge;
+	has_exclude_branch_ = zeros[0].penalty != infinity;
 	return true;
 }
 
@@ -213,7 +139,6 @@ bool TreeNode::HandleBaseCase(const CostMatrix& cost_matrix,
 	lower_bound_ = CalculateLowerBound();
 
 	has_exclude_branch_ = false;
-	found_lb_and_edge_ = true;
 	return false;  // no next edge, we have a complete tour
 }
 

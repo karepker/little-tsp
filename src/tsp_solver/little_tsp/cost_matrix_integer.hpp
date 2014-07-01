@@ -16,9 +16,9 @@ public:
 	CostMatrixInteger();
 	// creates an available, finite integer with the given value
 	CostMatrixInteger(int value, Edge e);
+	static CostMatrixInteger Infinite();
 
 	void SetInfinite() { infinite_ = true; }
-	void SetFinite() { infinite_ = false; }
 
 	// returns the value, throws an error if not available
 	int operator()() const;

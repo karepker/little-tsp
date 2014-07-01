@@ -1,7 +1,8 @@
-#ifndef LITTLE_TSP_COST_MATRIX_H
-#define LITTLE_TSP_COST_MATRIX_H
+#ifndef TSP_SOLVER_LITTLE_TSP_COST_MATRIX_H
+#define TSP_SOLVER_LITTLE_TSP_COST_MATRIX_H
 
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "matrix.hpp"
@@ -9,6 +10,7 @@
 
 class Graph;
 struct Edge;
+struct CostMatrixZero;
 
 // information about the useable matrix
 // temporary structure that is used to help build a TreeNode
@@ -23,6 +25,8 @@ public:
 	const CostMatrixInteger& operator()(const Edge& e) const;
 	CostMatrixInteger& operator()(int row_num, int column_num);
 	CostMatrixInteger& operator()(const Edge& e);
+
+	std::vector<CostMatrixZero> FindZerosAndPenalties() const;
 
 	bool IsRowAvailable(int row_num) const
 	{ return row_mapping_[row_num] >= 0; }
@@ -218,4 +222,4 @@ bool CostMatrix::CostVector<T>::Iterator::operator!=(
 { return !(operator==(other)); }
 
 
-#endif  // LITTLE_TSP_COST_MATRIX_H
+#endif  // TSP_SOLVER_LITTLE_TSP_COST_MATRIX_H

@@ -7,7 +7,6 @@
 #include "edge.hpp"
 #include "matrix.hpp"
 
-// forward declare
 class CostMatrix;
 struct CostMatrixZero;
 class Graph;
@@ -52,7 +51,6 @@ private:
 
 	// keeping track for future TreeNodes
 	Edge next_edge_;
-	bool found_lb_and_edge_;
 	bool has_exclude_branch_;
 
 	// the node's lower bound

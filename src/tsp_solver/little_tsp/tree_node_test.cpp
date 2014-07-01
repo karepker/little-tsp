@@ -98,7 +98,7 @@ TEST_F(TreeNodeTest, CalcLBAndNextEdgeNoExclude) {
 		}
 	}
 	EXPECT_CALL(no_exclude_graph, GetNumVertices()).WillRepeatedly(Return(3));
-	
+
 	// this looks like TestExcludeBranch
 	TreeNode root{no_exclude_graph};
 	Edge root_expected{1, 0};

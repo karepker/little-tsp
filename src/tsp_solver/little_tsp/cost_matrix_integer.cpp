@@ -1,9 +1,10 @@
 #include "tsp_solver/little_tsp/cost_matrix_integer.hpp"
 
-#include "edge.hpp"
-#include "util.hpp"
-
 #include <limits>
+
+#include "edge.hpp"
+#include "tsp_solver/little_tsp/util.hpp"
+#include "util.hpp"
 
 using std::numeric_limits;
 
@@ -14,6 +15,12 @@ CostMatrixInteger::CostMatrixInteger() : value_{-1}, infinite_{false},
 
 CostMatrixInteger::CostMatrixInteger(int value, Edge edge) : value_{value},
 	infinite_{false}, edge_{edge} {}
+
+CostMatrixInteger CostMatrixInteger::Infinite() {
+	CostMatrixInteger cmi{};
+	cmi.SetInfinite();
+	return cmi;
+}
 
 int CostMatrixInteger::operator()() const {
 	if (infinite_) { return infinity; }

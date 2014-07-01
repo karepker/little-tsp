@@ -3,16 +3,22 @@
 #include <cassert>
 
 #include <algorithm>
+#include <limits>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
-#include "cost_matrix_integer.hpp"
 #include "edge.hpp"
 #include "graph/graph.hpp"
 #include "matrix.hpp"
+#include "tsp_solver/little_tsp/cost_matrix_integer.hpp"
 
 using std::for_each;
 using std::min_element;
+using std::pair;
+using std::make_pair;
+using std::max;
+using std::numeric_limits;
 using std::unordered_map;
 using std::vector;
 
@@ -21,7 +27,20 @@ using CostVector = CostMatrix::CostVector<T>;
 using Row = CostMatrix::Row;
 using Column = CostMatrix::Column;
 
+using cmi_pair_t = std::pair<CostMatrixInteger, CostMatrixInteger>;
+using two_smallest_t = std::vector<cmi_pair_t>;
+
+const int infinity{numeric_limits<int>::max()};
+
 static vector<int> MakeVectorMapping(const vector<bool>& available);
+static void UpdateTwoSmallest(const CostMatrixInteger& current,
+		pair<CostMatrixInteger, CostMatrixInteger>& two_smallest);
+static CostMatrixInteger GetPenalty(const Edge& edge,
+		const cmi_pair_t& penalties);
+static vector<CostMatrixZero> FindBaseCaseZerosAndPenalties(
+		const vector<Edge>& zero_edges,
+		const two_smallest_t& two_smallest_row,
+		const two_smallest_t& two_smallest_column);
 
 CostMatrix::CostMatrix(const Graph& graph, const vector<Edge>& include,
 		const vector<Edge>& exclude) {
@@ -41,6 +60,7 @@ CostMatrix::CostMatrix(const Graph& graph, const vector<Edge>& include,
 	// row/column numbers
 	row_mapping_ = MakeVectorMapping(row_available);
 	column_mapping_ = MakeVectorMapping(column_available);
+
 	cost_matrix_.SetSize(available_rows, available_rows);
 
 	// create the condensed matrix
@@ -63,7 +83,7 @@ int CostMatrix::ReduceMatrix() {
 	// keep track of the amount reduced off the matrix
 	int decremented{0};
 
-	// reduce all the rows
+	// find the row reductions
 	for (int row_num{0}; row_num < Size(); ++row_num) {
 		CostVector<Row> cost_row{&cost_matrix_, Row{row_num}};
 		auto min_it = min_element(cost_row.begin(), cost_row.end());
@@ -75,7 +95,7 @@ int CostMatrix::ReduceMatrix() {
 		decremented += min();
 	}
 
-	// reduce all the columns
+	// find the column reductions
 	for (int column_num{0}; column_num < Size(); ++column_num) {
 		CostVector<Column> cost_column{&cost_matrix_,
 			Column{column_num}};
@@ -88,6 +108,86 @@ int CostMatrix::ReduceMatrix() {
 	}
 
 	return decremented;
+}
+
+vector<CostMatrixZero> CostMatrix::FindZerosAndPenalties() const {
+	// hold the two smallest elements in each row and column
+	cmi_pair_t infinite_cmis{make_pair(CostMatrixInteger::Infinite(),
+		CostMatrixInteger::Infinite())};
+	two_smallest_t two_smallest_row(Size(), infinite_cmis);
+	two_smallest_t two_smallest_column(Size(), infinite_cmis);
+
+	// hold the zeros
+	vector<Edge> zero_edges;
+
+	// find zeros and store two smallest elements
+	for (int i{0}; i < Size(); ++i) {
+		for (int j{0}; j < Size(); ++j) {
+			const CostMatrixInteger& current{cost_matrix_(i, j)};
+			// find zeros
+			if (current() == 0) { zero_edges.push_back(current.GetEdge()); }
+			// look for two smallest elements
+			UpdateTwoSmallest(current, two_smallest_row[i]);
+			UpdateTwoSmallest(current, two_smallest_column[j]);
+		}
+	}
+
+	// 3 cases
+	// 1. base case: 2 edges left to add. 
+	// Logic is sufficiently different that it belongs in its own function 
+	if (Size() == 2) {
+		return FindBaseCaseZerosAndPenalties(
+				zero_edges, two_smallest_row, two_smallest_column);
+	}
+
+	// hold a dummy value for max now that will be replaced on first iteration
+	vector<CostMatrixZero> cost_matrix_zeros;
+	cost_matrix_zeros.push_back(CostMatrixZero{Edge{-1, -1}, -1});
+
+	for (const Edge& edge : zero_edges) {
+		// get the row and column penalties
+		CostMatrixInteger row_penalty{GetPenalty(edge,
+				two_smallest_row[GetCondensedRowNum(edge.u)])};
+		CostMatrixInteger column_penalty{GetPenalty(edge,
+				two_smallest_column[GetCondensedColumnNum(edge.v)])};
+
+		// 2. case when excluding the node creates a disconnected graph
+		// we must choose this edge and cannot branch, so return vector with
+		// single element that is this zero
+		if (column_penalty.IsInfinite() != row_penalty.IsInfinite())
+		{ return { CostMatrixZero{edge, infinity} }; }
+
+		// 3. normal case, there is both an include and exclude branch
+		// keep only the structure with the maximum penalty
+		CostMatrixZero current_zero{edge, row_penalty() + column_penalty()};
+		cost_matrix_zeros[0] = max(cost_matrix_zeros[0], current_zero);
+	}
+	return cost_matrix_zeros;
+}
+
+vector<CostMatrixZero> FindBaseCaseZerosAndPenalties(
+		const vector<Edge>& zero_edges,
+		const two_smallest_t& two_smallest_row,
+		const two_smallest_t& two_smallest_column) {
+
+	vector<CostMatrixZero> cost_matrix_zeros;
+	for (const Edge& edge : zero_edges) {
+		// get the row and column penalties
+		CostMatrixInteger row_penalty{
+			GetPenalty(edge, two_smallest_row[edge.u])};
+		CostMatrixInteger column_penalty{
+			GetPenalty(edge, two_smallest_column[edge.v])};
+
+		// We need to know if penalty is zero or infinite so we can choose the 
+		// two edges with the highest penalties
+		if (column_penalty.IsInfinite() || row_penalty.IsInfinite())
+		{ cost_matrix_zeros.push_back(CostMatrixZero{edge, infinity}); }
+		else {
+			assert(column_penalty() == 0 && row_penalty() == 0);
+			cost_matrix_zeros.push_back(CostMatrixZero{edge, 0});
+		}
+	}
+	return cost_matrix_zeros;
 }
 
 const CostMatrixInteger& CostMatrix::operator()(int row_num,
@@ -170,3 +270,19 @@ vector<int> MakeVectorMapping(const vector<bool>& available) {
 	}
 	return mapping;
 }
+
+void UpdateTwoSmallest(const CostMatrixInteger& current,
+		pair<CostMatrixInteger, CostMatrixInteger>& two_smallest) {
+	if (current < two_smallest.first) {
+		two_smallest.second = two_smallest.first;
+		two_smallest.first = current;
+	} else if (current < two_smallest.second)
+	{ two_smallest.second = current; }
+}
+
+CostMatrixInteger GetPenalty(const Edge& edge, const cmi_pair_t& penalties) {
+	if (penalties.first.GetEdge() != edge) { return penalties.first; }
+	return penalties.second;
+}
+
+
