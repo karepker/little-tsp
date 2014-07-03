@@ -5,45 +5,34 @@
 #include <algorithm>
 #include <limits>
 #include <unordered_map>
-#include <utility>
 #include <vector>
 
 #include "edge.hpp"
 #include "graph/graph.hpp"
 #include "matrix.hpp"
 #include "tsp_solver/little_tsp/cost_matrix_integer.hpp"
+#include "tsp_solver/little_tsp/little_tsp_util.hpp"
 
 using std::for_each;
 using std::min_element;
-using std::pair;
-using std::make_pair;
-using std::max;
+using std::min;
 using std::numeric_limits;
 using std::unordered_map;
 using std::vector;
 
+/*
 template <typename T>
 using CostVector = CostMatrix::CostVector<T>;
 using Row = CostMatrix::Row;
 using Column = CostMatrix::Column;
-
-using cmi_pair_t = std::pair<CostMatrixInteger, CostMatrixInteger>;
-using two_smallest_t = std::vector<cmi_pair_t>;
+*/
 
 const int infinity{numeric_limits<int>::max()};
 
 static vector<int> MakeVectorMapping(const vector<bool>& available);
-static void UpdateTwoSmallest(const CostMatrixInteger& current,
-		pair<CostMatrixInteger, CostMatrixInteger>& two_smallest);
-static CostMatrixInteger GetPenalty(const Edge& edge,
-		const cmi_pair_t& penalties);
-static vector<CostMatrixZero> FindBaseCaseZerosAndPenalties(
-		const vector<Edge>& zero_edges,
-		const two_smallest_t& two_smallest_row,
-		const two_smallest_t& two_smallest_column);
 
 CostMatrix::CostMatrix(const Graph& graph, const vector<Edge>& include,
-		const vector<Edge>& exclude) {
+		const vector<Edge>& exclude) : actual_size_{graph.GetNumVertices()} {
 	vector<bool> row_available(graph.GetNumVertices(), true);
 	vector<bool> column_available(graph.GetNumVertices(), true);
 	int available_rows{graph.GetNumVertices()};
@@ -61,166 +50,93 @@ CostMatrix::CostMatrix(const Graph& graph, const vector<Edge>& include,
 	row_mapping_ = MakeVectorMapping(row_available);
 	column_mapping_ = MakeVectorMapping(column_available);
 
+	row_reductions_ = vector<int>(available_rows, 0);
+	column_reductions_ = vector<int>(available_rows, 0);
 	cost_matrix_.SetSize(available_rows, available_rows);
 
 	// create the condensed matrix
-	for (int i{0}; i < graph.GetNumVertices(); ++i) {
-		if (!row_available[i]) { continue; }
-		for (int j{0}; j < graph.GetNumVertices(); ++j) {
-			if (!column_available[j]) { continue; }
-			(*this)(i, j) = CostMatrixInteger{graph(i, j), Edge{i, j}};
+	for (int i{0}; i < Size(); ++i) {
+		for (int j{0}; j < Size(); ++j) {
+			int row_num{GetActualRowNum(i)};
+			int column_num{GetActualColumnNum(j)};
+			cost_matrix_(i, j) = CostMatrixInteger{graph(row_num, column_num),
+				Edge{row_num, column_num}};
 		}
 	}
 
 	// mark cells that have been excluded as infinite
 	for (const Edge& e : exclude) {
-		if (!IsRowAvailable(e.u) || !IsColumnAvailable(e.v)) { continue; }
-		(*this)(e.u, e.v).SetInfinite();
+		if (!row_available[e.u] || !column_available[e.v]) { continue; }
+		// binary search the mappings to convert actual => condensed
+		int condensed_row_num{
+			int(lower_bound(row_mapping_.begin(), row_mapping_.end(), e.u) -
+			row_mapping_.begin())};
+		int condensed_column_num{int(lower_bound(
+					column_mapping_.begin(), column_mapping_.end(), e.v) -
+				column_mapping_.begin())};
+		cost_matrix_(condensed_row_num, condensed_column_num).SetInfinite();
 	}
 }
 
 int CostMatrix::ReduceMatrix() {
+	assert(Size() > 1);
 	// keep track of the amount reduced off the matrix
 	int decremented{0};
 
 	// find the row reductions
 	for (int row_num{0}; row_num < Size(); ++row_num) {
-		CostVector<Row> cost_row{&cost_matrix_, Row{row_num}};
-		auto min_it = min_element(cost_row.begin(), cost_row.end());
-		assert(min_it != cost_row.end());
-		CostMatrixInteger min{*min_it};
-		assert(!min.IsInfinite());
-		for_each(cost_row.begin(), cost_row.end(),
-				[&min](CostMatrixInteger& elt) { elt -= min; });
-		decremented += min();
+		// find min element of row `row_num` 
+		int min_elt{infinity};
+		for (int column_num{0}; column_num < Size(); ++column_num)
+		{ min_elt = min((*this)(row_num, column_num)(), min_elt); }
+		assert(min_elt != infinity);
+		row_reductions_[row_num] = min_elt;
+		decremented += min_elt;
 	}
 
 	// find the column reductions
 	for (int column_num{0}; column_num < Size(); ++column_num) {
-		CostVector<Column> cost_column{&cost_matrix_,
-			Column{column_num}};
-		auto min_it = min_element(cost_column.begin(), cost_column.end());
-		CostMatrixInteger min{*min_it};
-		assert(!min.IsInfinite());
-		for_each(cost_column.begin(), cost_column.end(),
-				[&min](CostMatrixInteger& elt) { elt -= min; });
-		decremented += min();
+		// find min element of column `column_num` 
+		int min_elt{infinity};
+		for (int row_num{0}; row_num < Size(); ++row_num)
+		{ min_elt = min((*this)(row_num, column_num)(), min_elt); }
+		assert(min_elt != infinity);
+		column_reductions_[column_num] = min_elt;
+		decremented += min_elt;
 	}
 
 	return decremented;
 }
 
-vector<CostMatrixZero> CostMatrix::FindZerosAndPenalties() const {
-	// hold the two smallest elements in each row and column
-	cmi_pair_t infinite_cmis{make_pair(CostMatrixInteger::Infinite(),
-		CostMatrixInteger::Infinite())};
-	two_smallest_t two_smallest_row(Size(), infinite_cmis);
-	two_smallest_t two_smallest_column(Size(), infinite_cmis);
 
-	// hold the zeros
-	vector<Edge> zero_edges;
-
-	// find zeros and store two smallest elements
-	for (int i{0}; i < Size(); ++i) {
-		for (int j{0}; j < Size(); ++j) {
-			const CostMatrixInteger& current{cost_matrix_(i, j)};
-			// find zeros
-			if (current() == 0) { zero_edges.push_back(current.GetEdge()); }
-			// look for two smallest elements
-			UpdateTwoSmallest(current, two_smallest_row[i]);
-			UpdateTwoSmallest(current, two_smallest_column[j]);
-		}
-	}
-
-	// 3 cases
-	// 1. base case: 2 edges left to add. 
-	// Logic is sufficiently different that it belongs in its own function 
-	if (Size() == 2) {
-		return FindBaseCaseZerosAndPenalties(
-				zero_edges, two_smallest_row, two_smallest_column);
-	}
-
-	// hold a dummy value for max now that will be replaced on first iteration
-	vector<CostMatrixZero> cost_matrix_zeros;
-	cost_matrix_zeros.push_back(CostMatrixZero{Edge{-1, -1}, -1});
-
-	for (const Edge& edge : zero_edges) {
-		// get the row and column penalties
-		CostMatrixInteger row_penalty{GetPenalty(edge,
-				two_smallest_row[GetCondensedRowNum(edge.u)])};
-		CostMatrixInteger column_penalty{GetPenalty(edge,
-				two_smallest_column[GetCondensedColumnNum(edge.v)])};
-
-		// 2. case when excluding the node creates a disconnected graph
-		// we must choose this edge and cannot branch, so return vector with
-		// single element that is this zero
-		if (column_penalty.IsInfinite() != row_penalty.IsInfinite())
-		{ return { CostMatrixZero{edge, infinity} }; }
-
-		// 3. normal case, there is both an include and exclude branch
-		// keep only the structure with the maximum penalty
-		CostMatrixZero current_zero{edge, row_penalty() + column_penalty()};
-		cost_matrix_zeros[0] = max(cost_matrix_zeros[0], current_zero);
-	}
-	return cost_matrix_zeros;
-}
-
-vector<CostMatrixZero> FindBaseCaseZerosAndPenalties(
-		const vector<Edge>& zero_edges,
-		const two_smallest_t& two_smallest_row,
-		const two_smallest_t& two_smallest_column) {
-
-	vector<CostMatrixZero> cost_matrix_zeros;
-	for (const Edge& edge : zero_edges) {
-		// get the row and column penalties
-		CostMatrixInteger row_penalty{
-			GetPenalty(edge, two_smallest_row[edge.u])};
-		CostMatrixInteger column_penalty{
-			GetPenalty(edge, two_smallest_column[edge.v])};
-
-		// We need to know if penalty is zero or infinite so we can choose the 
-		// two edges with the highest penalties
-		if (column_penalty.IsInfinite() || row_penalty.IsInfinite())
-		{ cost_matrix_zeros.push_back(CostMatrixZero{edge, infinity}); }
-		else {
-			assert(column_penalty() == 0 && row_penalty() == 0);
-			cost_matrix_zeros.push_back(CostMatrixZero{edge, 0});
-		}
-	}
-	return cost_matrix_zeros;
-}
-
+/*
 const CostMatrixInteger& CostMatrix::operator()(int row_num,
 		int column_num) const { return operator()(Edge{row_num, column_num}); }
-const CostMatrixInteger& CostMatrix::operator()(const Edge& e) const
-{ return cost_matrix_(GetCondensedRowNum(e.u), GetCondensedColumnNum(e.v)); }
+*/
+const CostMatrixInteger CostMatrix::operator()(
+		int row_num, int column_num) const {
+	return cost_matrix_(row_num, column_num) - row_reductions_[row_num] -
+		column_reductions_[column_num];
+}
 
-CostMatrixInteger& CostMatrix::operator()(int row_num, int column_num)
-{ return operator()(Edge{row_num, column_num}); }
-CostMatrixInteger& CostMatrix::operator()(const Edge& e)
-{ return cost_matrix_(GetCondensedRowNum(e.u), GetCondensedColumnNum(e.v)); }
+CostMatrixInteger CostMatrix::operator()(int row_num, int column_num) {
+	return cost_matrix_(row_num, column_num) - row_reductions_[row_num] -
+		column_reductions_[column_num];
+}
+/*
+CostMatrixInteger& CostMatrix::operator()(const Edge& e) {
+	return cost_matrix_(e.u, e.v) - row_reductions_[e.u] -
+		column_reductions_[e.v];
+} */
 
 
+/*
 CostVector<Row> CostMatrix::GetRow(int row_num) {
-	return CostVector<Row>{&cost_matrix_,
-		Row{GetCondensedRowNum(row_num)}};
+	return CostVector<Row>{this, Row{row_num}};
 }
 
 CostVector<Column> CostMatrix::GetColumn(int column_num) {
-	return CostVector<Column>{&cost_matrix_,
-		Column{GetCondensedColumnNum(column_num)}};
-}
-
-int CostMatrix::GetCondensedRowNum(int row_num) const {
-	if (!IsRowAvailable(row_num))
-	{ throw NotAvailableError{"This row number is not available"}; }
-	return row_mapping_[row_num];
-}
-
-int CostMatrix::GetCondensedColumnNum(int column_num) const {
-	if (!IsColumnAvailable(column_num))
-	{ throw NotAvailableError{"This column number is not available"}; }
-	return column_mapping_[column_num];
+	return CostVector<Column>{this, Column{column_num}};
 }
 
 CostMatrixInteger& CostMatrix::Iterator::operator*()
@@ -259,30 +175,15 @@ void CostMatrix::Iterator::MoveToNextCell() {
 	if (column_num_ == 0) { ++row_num_; }
 }
 
-vector<int> MakeVectorMapping(const vector<bool>& available) {
-	int condensed_matrix_current_cell{0};
-	vector<int> mapping(available.size(), -1);
+*/
 
-	// make mapping "actual row/column" => "condensed matrix row/column"
+vector<int> MakeVectorMapping(const vector<bool>& available) {
+	vector<int> mapping;
+
+	// make mapping "condensed matrix row/column" => "actual row/column"
 	for (int cell_num{0}; cell_num < int(available.size()); ++cell_num) {
 		if (!available[cell_num]) { continue; }
-		mapping[cell_num] = condensed_matrix_current_cell++;
+		mapping.push_back(cell_num);
 	}
 	return mapping;
 }
-
-void UpdateTwoSmallest(const CostMatrixInteger& current,
-		pair<CostMatrixInteger, CostMatrixInteger>& two_smallest) {
-	if (current < two_smallest.first) {
-		two_smallest.second = two_smallest.first;
-		two_smallest.first = current;
-	} else if (current < two_smallest.second)
-	{ two_smallest.second = current; }
-}
-
-CostMatrixInteger GetPenalty(const Edge& edge, const cmi_pair_t& penalties) {
-	if (penalties.first.GetEdge() != edge) { return penalties.first; }
-	return penalties.second;
-}
-
-

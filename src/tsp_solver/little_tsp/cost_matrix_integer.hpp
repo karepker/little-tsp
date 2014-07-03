@@ -17,6 +17,7 @@ public:
 	// creates an available, finite integer with the given value
 	CostMatrixInteger(int value, Edge e);
 	static CostMatrixInteger Infinite();
+	static CostMatrixInteger Infinite(const Edge& e);
 
 	void SetInfinite() { infinite_ = true; }
 
@@ -29,6 +30,8 @@ public:
 	// math when an integer is infinite, and throw an error if its not available
 	CostMatrixInteger& operator+=(CostMatrixInteger incrementer);
 	CostMatrixInteger& operator-=(CostMatrixInteger decrementer);
+
+	CostMatrixInteger operator-(int other) const;
 
 	bool operator<(CostMatrixInteger other) const;
 

@@ -21,20 +21,15 @@ public:
 
 	int ReduceMatrix();
 
-	const CostMatrixInteger& operator()(int row_num, int column_num) const;
-	const CostMatrixInteger& operator()(const Edge& e) const;
-	CostMatrixInteger& operator()(int row_num, int column_num);
-	CostMatrixInteger& operator()(const Edge& e);
-
-	std::vector<CostMatrixZero> FindZerosAndPenalties() const;
-
-	bool IsRowAvailable(int row_num) const
-	{ return row_mapping_[row_num] >= 0; }
-	bool IsColumnAvailable(int column_num) const
-	{ return column_mapping_[column_num] >= 0; }
+	const CostMatrixInteger operator()(int row_num, int column_num) const;
+	//const CostMatrixInteger& operator()(const Edge& e) const;
+	CostMatrixInteger operator()(int row_num, int column_num);
+	//CostMatrixInteger& operator()(const Edge& e);
 
 	int Size() const { return cost_matrix_.GetNumRows(); }
+	int GetActualSize() const { return actual_size_; }
 
+	/*
 	template <typename T>
 	class CostVector;
 	// these classes need to be able to share data with each other because they
@@ -52,14 +47,14 @@ public:
 	template <typename T>
 	class CostVector {
 	public:
-		CostVector(Matrix<CostMatrixInteger>* cost_matrix_ptr,
+		CostVector(CostMatrix* cost_matrix_ptr,
 				const T orientation) : cost_matrix_ptr_{cost_matrix_ptr},
 			orientation_{orientation} {}
 
 		const CostMatrixInteger& operator[](int cell_num) const;
 		CostMatrixInteger& operator[](int cell_num);
 		// GetNumRows and GetNumColumns are equivalent for square cost matrix
-		int Size() const { return cost_matrix_ptr_->GetNumRows(); }
+		int Size() const { return cost_matrix_ptr_->Size(); }
 
 		// we need access to the protected interface in cost vector and the
 		// subscripting operation
@@ -96,7 +91,7 @@ public:
 		Iterator end() { return Iterator{this, Size()}; }
 
 	private:
-		Matrix<CostMatrixInteger>* cost_matrix_ptr_;
+		CostMatrix* cost_matrix_ptr_;
 		const T orientation_;  // either Row or Column
 	};
 
@@ -126,7 +121,7 @@ public:
 	class Iterator {
 	public:
 		Iterator() : cost_matrix_ptr_{nullptr}, row_num_{0}, column_num_{0} {}
-		explicit Iterator(Matrix<CostMatrixInteger>* cost_matrix_ptr) :
+		explicit Iterator(CostMatrix* cost_matrix_ptr) :
 			cost_matrix_ptr_{cost_matrix_ptr}, row_num_{0}, column_num_{0} {}
 
 		CostMatrixInteger& operator*();
@@ -143,30 +138,35 @@ public:
 		friend class CostMatrix;
 
 	private:
-		Iterator(Matrix<CostMatrixInteger>* cost_matrix_ptr, int row_num,
-				int column_num) : cost_matrix_ptr_{cost_matrix_ptr},
-			row_num_{row_num}, column_num_{column_num} {}
+		Iterator(CostMatrix* cost_matrix_ptr, int row_num, int column_num) :
+			cost_matrix_ptr_{cost_matrix_ptr}, row_num_{row_num},
+			column_num_{column_num} {}
 
 		void MoveToNextCell();
 
-		Matrix<CostMatrixInteger>* cost_matrix_ptr_;
+		CostMatrix* cost_matrix_ptr_;
 		int row_num_;
 		int column_num_;
 	};
 
-	Iterator begin() { return Iterator{&cost_matrix_}; }
-	Iterator end() { return Iterator{&cost_matrix_, Size(), 0}; }
+	Iterator begin() { return Iterator{this}; }
+	Iterator end() { return Iterator{this, Size(), 0}; } */
 
 private:
-	int GetCondensedRowNum(int row_num) const;
-	int GetCondensedColumnNum(int row_num) const;
+	int GetActualRowNum(int row_num) const { return row_mapping_[row_num]; }
+	int GetActualColumnNum(int column_num) const
+	{ return column_mapping_[column_num]; }
 
+	int actual_size_;
 	Matrix<CostMatrixInteger> cost_matrix_;
 	// map actual cell => condensed cell
 	std::vector<int> row_mapping_;
 	std::vector<int> column_mapping_;
+	std::vector<int> row_reductions_;
+	std::vector<int> column_reductions_;
 };
 
+/*
 template <typename T>
 const CostMatrixInteger& CostMatrix::CostVector<T>::operator[](
 		int cell_num) const {
@@ -221,5 +221,6 @@ bool CostMatrix::CostVector<T>::Iterator::operator!=(
 		const CostVector::Iterator& other) const
 { return !(operator==(other)); }
 
+*/
 
 #endif  // TSP_SOLVER_LITTLE_TSP_COST_MATRIX_H

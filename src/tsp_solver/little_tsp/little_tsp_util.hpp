@@ -4,13 +4,6 @@
 #include "edge.hpp"
 #include "util.hpp"
 
-struct CostMatrixZero {
-	Edge edge;
-	int penalty;
-	bool operator<(const CostMatrixZero& other) const
-	{ return penalty < other.penalty; }
-};
-
 class NotAvailableError : public ImplementationError {
 public:
 	NotAvailableError(const char* msg) : ImplementationError{msg} {}

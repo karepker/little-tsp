@@ -4,8 +4,8 @@
 
 #include <algorithm>
 #include <deque>
-#include <exception>
 #include <iterator>
+#include <utility>
 #include <limits>
 
 #include "graph/graph.hpp"
@@ -13,20 +13,35 @@
 #include "path.hpp"
 #include "tsp_solver/little_tsp/cost_matrix.hpp"
 #include "tsp_solver/little_tsp/cost_matrix_integer.hpp"
-#include "tsp_solver/little_tsp/util.hpp"
+#include "tsp_solver/little_tsp/little_tsp_util.hpp"
 
 using std::back_inserter;
-using std::copy_if;
 using std::deque;
 using std::exception;
 using std::for_each;
+using std::pair;
+using std::make_pair;
+using std::max;
 using std::max_element;
-using std::min_element;
 using std::numeric_limits;
 using std::ostream;
 using std::vector;
 
+using cmi_pair_t = std::pair<CostMatrixInteger, CostMatrixInteger>;
+using two_smallest_t = std::vector<cmi_pair_t>;
+
 const int infinity{numeric_limits<int>::max()};
+
+static void UpdateTwoSmallest(const CostMatrixInteger& current,
+		pair<CostMatrixInteger, CostMatrixInteger>& two_smallest);
+static CostMatrixInteger GetPenalty(const Edge& edge,
+		const cmi_pair_t& penalties);
+static vector<CostMatrixZero> FindZerosAndPenalties(
+		const CostMatrix& cost_matrix);
+static vector<CostMatrixZero> FindBaseCaseZerosAndPenalties(
+		const vector<Edge>& zero_edges,
+		const two_smallest_t& two_smallest_row,
+		const two_smallest_t& two_smallest_column);
 
 TreeNode::TreeNode(const Graph& costs) : graph_ptr_{&costs},
 		next_edge_{-1, -1}, has_exclude_branch_{false}, lower_bound_{infinity} {
@@ -93,12 +108,25 @@ Path TreeNode::GetTSPPath() const {
 	return solution;
 }
 
+int TreeNode::CalculateLowerBound() const {
+	return accumulate(include_.begin(), include_.end(), 0,
+			[this](int current_lb, Edge e)
+			{ return current_lb + (*graph_ptr_)(e); });
+}
+
 ostream& operator<<(ostream& os, const TreeNode& p) {
 	os << "{ ";
 	for (const Edge& e : p.include_) { os << "(" << e.u << " " << e.v << ") "; }
 	os << " } ";
 	return os;
 }
+
+struct CostMatrixZero {
+	Edge edge;
+	int penalty;
+	bool operator<(const CostMatrixZero& other) const
+	{ return penalty < other.penalty; }
+};
 
 bool TreeNode::CalcLBAndNextEdge() {
 	// create a cost matrix from information stored in the tree node, reduce it
@@ -108,7 +136,7 @@ bool TreeNode::CalcLBAndNextEdge() {
 	lower_bound_ += cost_matrix.ReduceMatrix();
 
 	// find all the zeros in the matrix and copy them into the zeros vector
-	vector<CostMatrixZero> zeros{cost_matrix.FindZerosAndPenalties()};
+	vector<CostMatrixZero> zeros{FindZerosAndPenalties(cost_matrix)};
 
 	// handle base case in a separate function
 	if (cost_matrix.Size() == 2) { return HandleBaseCase(cost_matrix, zeros); }
@@ -125,7 +153,7 @@ bool TreeNode::HandleBaseCase(const CostMatrix& cost_matrix,
 		const vector<CostMatrixZero>& zeros) {
 	// find the edge with the largest penalty, remove it from zeros
 	auto max_penalty_it = max_element(zeros.begin(), zeros.end());
-	Edge edge = max_penalty_it->edge;
+	Edge edge{max_penalty_it->edge};
 	AddInclude(edge);
 
 	// find the zero that completes the path (is not in the same row or column)
@@ -142,9 +170,98 @@ bool TreeNode::HandleBaseCase(const CostMatrix& cost_matrix,
 	return false;  // no next edge, we have a complete tour
 }
 
-int TreeNode::CalculateLowerBound() const {
-	return accumulate(include_.begin(), include_.end(), 0,
-		[this](int current_lb, Edge e) {
-		return current_lb + (*graph_ptr_)(e);
-		});
+vector<CostMatrixZero> FindZerosAndPenalties(const CostMatrix& cost_matrix) {
+	// hold the two smallest elements in each row and column
+	cmi_pair_t infinite_cmis{make_pair(CostMatrixInteger::Infinite(),
+		CostMatrixInteger::Infinite())};
+	two_smallest_t two_smallest_row(cost_matrix.GetActualSize(), infinite_cmis);
+	two_smallest_t two_smallest_column(cost_matrix.GetActualSize(),
+			infinite_cmis);
+
+	// hold the zeros
+	vector<Edge> zero_edges;
+
+	// find zeros and store two smallest elements
+	for (int i{0}; i < cost_matrix.Size(); ++i) {
+		for (int j{0}; j < cost_matrix.Size(); ++j) {
+			CostMatrixInteger current{cost_matrix(i, j)};
+			const Edge& current_edge{current.GetEdge()};
+			// find zeros
+			if (current() == 0) { zero_edges.push_back(current_edge); }
+			// look for two smallest elements
+			UpdateTwoSmallest(current, two_smallest_row[current_edge.u]);
+			UpdateTwoSmallest(current, two_smallest_column[current_edge.v]);
+		}
+	}
+
+	// 3 cases
+	// 1. base case: 2 edges left to add. 
+	// Logic is sufficiently different that it belongs in its own function 
+	if (cost_matrix.Size() == 2) {
+		return FindBaseCaseZerosAndPenalties(
+				zero_edges, two_smallest_row, two_smallest_column);
+	}
+
+	// hold a dummy value for max now that will be replaced on first iteration
+	vector<CostMatrixZero> cost_matrix_zeros;
+	cost_matrix_zeros.push_back(CostMatrixZero{Edge{-1, -1}, -1});
+
+	for (const Edge& edge : zero_edges) {
+		// get the row and column penalties
+		CostMatrixInteger row_penalty{
+			GetPenalty(edge, two_smallest_row[edge.u])};
+		CostMatrixInteger column_penalty{
+			GetPenalty(edge, two_smallest_column[edge.v])};
+
+		// 2. case when excluding the node creates a disconnected graph
+		// we must choose this edge and cannot branch, so return vector with
+		// single element that is this zero
+		if (column_penalty.IsInfinite() != row_penalty.IsInfinite())
+		{ return { CostMatrixZero{edge, infinity} }; }
+
+		// 3. normal case, there is both an include and exclude branch
+		// keep only the structure with the maximum penalty
+		CostMatrixZero current_zero{edge, row_penalty() + column_penalty()};
+		cost_matrix_zeros[0] = max(cost_matrix_zeros[0], current_zero);
+	}
+	return cost_matrix_zeros;
+}
+
+vector<CostMatrixZero> FindBaseCaseZerosAndPenalties(
+		const vector<Edge>& zero_edges,
+		const two_smallest_t& two_smallest_row,
+		const two_smallest_t& two_smallest_column) {
+
+	vector<CostMatrixZero> cost_matrix_zeros;
+	for (const Edge& edge : zero_edges) {
+		// get the row and column penalties
+		CostMatrixInteger row_penalty{
+			GetPenalty(edge, two_smallest_row[edge.u])};
+		CostMatrixInteger column_penalty{
+			GetPenalty(edge, two_smallest_column[edge.v])};
+
+		// We need to know if penalty is zero or infinite so we can choose the 
+		// two edges with the highest penalties
+		if (column_penalty.IsInfinite() || row_penalty.IsInfinite())
+		{ cost_matrix_zeros.push_back(CostMatrixZero{edge, infinity}); }
+		else {
+			assert(column_penalty() == 0 && row_penalty() == 0);
+			cost_matrix_zeros.push_back(CostMatrixZero{edge, 0});
+		}
+	}
+	return cost_matrix_zeros;
+}
+
+void UpdateTwoSmallest(const CostMatrixInteger& current,
+		pair<CostMatrixInteger, CostMatrixInteger>& two_smallest) {
+	if (current < two_smallest.first) {
+		two_smallest.second = two_smallest.first;
+		two_smallest.first = current;
+	} else if (current < two_smallest.second)
+	{ two_smallest.second = current; }
+}
+
+CostMatrixInteger GetPenalty(const Edge& edge, const cmi_pair_t& penalties) {
+	if (penalties.first.GetEdge() != edge) { return penalties.first; }
+	return penalties.second;
 }

@@ -3,7 +3,7 @@
 #include <limits>
 
 #include "edge.hpp"
-#include "tsp_solver/little_tsp/util.hpp"
+#include "tsp_solver/little_tsp/little_tsp_util.hpp"
 #include "util.hpp"
 
 using std::numeric_limits;
@@ -18,6 +18,12 @@ CostMatrixInteger::CostMatrixInteger(int value, Edge edge) : value_{value},
 
 CostMatrixInteger CostMatrixInteger::Infinite() {
 	CostMatrixInteger cmi{};
+	cmi.SetInfinite();
+	return cmi;
+}
+
+CostMatrixInteger CostMatrixInteger::Infinite(const Edge& edge) {
+	CostMatrixInteger cmi{infinity, edge};
 	cmi.SetInfinite();
 	return cmi;
 }
@@ -43,6 +49,11 @@ CostMatrixInteger& CostMatrixInteger::operator+=(CostMatrixInteger other) {
 	}
 	value_ += other.value_;
 	return *this;
+}
+
+CostMatrixInteger CostMatrixInteger::operator-(int other) const {
+	if (infinite_) { return CostMatrixInteger::Infinite(edge_); }
+	return CostMatrixInteger{value_ - other, edge_};
 }
 
 bool CostMatrixInteger::operator<(CostMatrixInteger other) const {
