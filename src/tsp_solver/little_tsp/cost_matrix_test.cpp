@@ -1,12 +1,14 @@
 #include "tsp_solver/little_tsp/cost_matrix.hpp"
 
+#include <cassert>
+
 #include <algorithm>
 #include <iterator>
 #include <limits>
 #include <memory>
 #include <vector>
 
-#include "cost_matrix_integer.hpp"
+#include "graph/edge_cost.hpp"
 #include "edge.hpp"
 #include "graph/mock.hpp"
 #include "util.hpp"
@@ -30,7 +32,9 @@ using Row = CostMatrix::Row;
 using Column = CostMatrix::Column;
 */
 
+using ::testing::Const;
 using ::testing::Return;
+using ::testing::ReturnRef;
 
 const int infinity{numeric_limits<int>::max()};
 
@@ -39,7 +43,8 @@ const vector<Edge> exclude1{{0, 0}};
 const vector<Edge> include2{{0, 2}};
 const vector<Edge> exclude2{{0, 0}};
 
-const Matrix<int> graph_weights{3, {6, 2, 4, 4, 5, 3, 8, 9, 7}};
+const Matrix<EdgeCost> graph_weights{
+	MakeEdgeCosts({6, 2, 4, 4, 5, 3, 8, 9, 7}, 3)};
 
 //template<typename T>
 //static void CompareWithVector(T matrix, vector<int> expected);
@@ -60,8 +65,8 @@ CostMatrixTest::CostMatrixTest() {
 	// set expectations for the graph
 	for (int i{0}; i < graph_weights.GetNumRows(); ++i) {
 		for (int j{0}; j < graph_weights.GetNumColumns(); ++j) {
-			EXPECT_CALL(graph, Predicate(i, j)).WillRepeatedly(
-					Return(graph_weights(i, j)));
+			EXPECT_CALL(Const(graph), Predicate(i, j)).WillRepeatedly(
+					ReturnRef(graph_weights(i, j)));
 		}
 	}
 
@@ -128,7 +133,7 @@ template<typename T>
 void TestMatrix(const CostMatrix& matrix, vector<int> expected) {
 	vector<int> actual;
 	transform(matrix.begin(), matrix.end(), back_inserter(actual),
-			[](const CostMatrixInteger& cmi) { return cmi(); });
+			[](const EdgeCost& cmi) { return cmi(); });
 	EXPECT_EQ(expected, actual);
 }
 */

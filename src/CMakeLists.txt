@@ -1,5 +1,6 @@
 set(SRCS
 	edge.cpp
+	graph/edge_cost.cpp
 	graph/factory.cpp
 	graph/graph.cpp
 	graph/manhattan.cpp
@@ -8,7 +9,6 @@ set(SRCS
 	tsp_solver/factory.cpp
 	tsp_solver/fast_tsp_solver.cpp
 	tsp_solver/little_tsp/cost_matrix.cpp
-	tsp_solver/little_tsp/cost_matrix_integer.cpp
 	tsp_solver/little_tsp/solver.cpp
 	tsp_solver/little_tsp/tree_node.cpp
 	tsp_solver/naive_tsp_solver.cpp
@@ -17,7 +17,8 @@ set(SRCS
 set(MAIN_SRC main.cpp)
 
 set(UNITTEST_SRCS
-	tsp_solver/little_tsp/cost_matrix_integer_test.cpp
+	graph/edge_cost_test.cpp
+	graph/mock.cpp
 	tsp_solver/little_tsp/cost_matrix_test.cpp
 	tsp_solver/little_tsp/tree_node_test.cpp)
 

@@ -6,11 +6,10 @@
 #include <vector>
 
 #include "matrix.hpp"
-#include "tsp_solver/little_tsp/cost_matrix_integer.hpp"
 
-class Graph;
 struct Edge;
-struct CostMatrixZero;
+class EdgeCost;
+class Graph;
 
 // information about the useable matrix
 // temporary structure that is used to help build a TreeNode
@@ -21,13 +20,18 @@ public:
 
 	int ReduceMatrix();
 
-	const CostMatrixInteger operator()(int row_num, int column_num) const;
+	//const EdgeCost operator()(int row_num, int column_num) const;
 	//const CostMatrixInteger& operator()(const Edge& e) const;
-	CostMatrixInteger operator()(int row_num, int column_num);
+	EdgeCost operator()(int row_num, int column_num) const;
 	//CostMatrixInteger& operator()(const Edge& e);
 
-	int Size() const { return cost_matrix_.GetNumRows(); }
-	int GetActualSize() const { return actual_size_; }
+	int GetActualSize() const { return row_mapping_.size(); }
+	int Size() const { return size_; }
+
+	bool IsRowAvailable(int row_num) const
+	{ return row_mapping_[row_num] >= 0; }
+	bool IsColumnAvailable(int column_num) const
+	{ return column_mapping_[column_num] >= 0; }
 
 	/*
 	template <typename T>
@@ -153,12 +157,13 @@ public:
 	Iterator end() { return Iterator{this, Size(), 0}; } */
 
 private:
-	int GetActualRowNum(int row_num) const { return row_mapping_[row_num]; }
-	int GetActualColumnNum(int column_num) const
+	int GetCondensedRowNum(int row_num) const { return row_mapping_[row_num]; }
+	int GetCondensedColumnNum(int column_num) const
 	{ return column_mapping_[column_num]; }
 
-	int actual_size_;
-	Matrix<CostMatrixInteger> cost_matrix_;
+	const Graph& graph_;
+	Matrix<int> infinite_;
+	int size_;
 	// map actual cell => condensed cell
 	std::vector<int> row_mapping_;
 	std::vector<int> column_mapping_;

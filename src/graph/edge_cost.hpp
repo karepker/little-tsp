@@ -1,5 +1,5 @@
-#ifndef LITTLE_TSP_COST_MATRIX_INTEGER_H
-#define LITTLE_TSP_COST_MATRIX_INTEGER_H
+#ifndef GRAPH_EDGE_COST_H
+#define GRAPH_EDGE_COST_H
 
 #include "util.hpp"
 #include "edge.hpp"
@@ -10,14 +10,14 @@
  * been "crossed out" in the cost matrix. An integer's infinite status
  * corresponds to whether or not it should be regarded as infinite
  */
-class CostMatrixInteger {
+class EdgeCost {
 public:
 	// default construction is non-available
-	CostMatrixInteger();
+	EdgeCost();
 	// creates an available, finite integer with the given value
-	CostMatrixInteger(int value, Edge e);
-	static CostMatrixInteger Infinite();
-	static CostMatrixInteger Infinite(const Edge& e);
+	EdgeCost(int value, Edge e);
+	static EdgeCost Infinite();
+	static EdgeCost Infinite(const Edge& e);
 
 	void SetInfinite() { infinite_ = true; }
 
@@ -28,12 +28,12 @@ public:
 
 	// Overloaded increment and decrement. These try and follow the rules of
 	// math when an integer is infinite, and throw an error if its not available
-	CostMatrixInteger& operator+=(CostMatrixInteger incrementer);
-	CostMatrixInteger& operator-=(CostMatrixInteger decrementer);
+	EdgeCost& operator+=(EdgeCost incrementer);
+	EdgeCost& operator-=(EdgeCost decrementer);
 
-	CostMatrixInteger operator-(int other) const;
+	EdgeCost operator-(int other) const;
 
-	bool operator<(CostMatrixInteger other) const;
+	bool operator<(EdgeCost other) const;
 
 private:
 	int value_;
@@ -42,4 +42,4 @@ private:
 	Edge edge_;
 };
 
-#endif  // LITTLE_TSP_COST_MATRIX_INTEGER_H
+#endif  // GRAPH_EDGE_COST_H

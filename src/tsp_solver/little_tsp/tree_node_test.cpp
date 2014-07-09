@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include "graph/edge_cost.hpp"
 #include "graph/mock.hpp"
 #include "matrix.hpp"
 #include "path.hpp"
@@ -12,26 +13,28 @@
 
 using std::vector;
 
+using ::testing::Const;
 using ::testing::Return;
+using ::testing::ReturnRef;
 
 // cost matrix given in source paper (infinities on diagonals replaced by 0s)
-const Matrix<int> graph_weights{6, {
+const Matrix<EdgeCost> graph_weights{MakeEdgeCosts({
 	0, 27, 43, 16, 30, 26,
 	7, 0, 16, 1, 30, 25,
 	20, 13, 0, 35, 5, 0,
 	21, 16, 25, 0, 18, 18,
 	12, 46, 27, 48, 0, 5,
-	23, 5, 5, 9, 5, 0}};
+	23, 5, 5, 9, 5, 0}, 6)};
 
 class TreeNodeTest : public ::testing::Test {
 public:
 	TreeNodeTest() {
 		for (int i{0}; i < 6; ++i) {
 			for (int j{0}; j < 6; ++j) {
-				EXPECT_CALL(graph, Predicate(i, j)).WillRepeatedly(
-						Return(graph_weights(i, j)));
-				EXPECT_CALL(graph, Predicate(Edge{i, j})).WillRepeatedly(
-						Return(graph_weights(i, j)));
+				EXPECT_CALL(Const(graph), Predicate(i, j)).WillRepeatedly(
+						ReturnRef(graph_weights(i, j)));
+				EXPECT_CALL(Const(graph), Predicate(Edge{i, j})).WillRepeatedly(
+						ReturnRef(graph_weights(i, j)));
 			}
 		}
 		EXPECT_CALL(graph, GetNumVertices()).WillRepeatedly(Return(6));
@@ -87,14 +90,15 @@ TEST_F(TreeNodeTest, CalcLBAndNextEdgeExclude) {
 }
 
 TEST_F(TreeNodeTest, CalcLBAndNextEdgeNoExclude) {
-	Matrix<int> weights{3, {-1, 1, 0, 0, -1, 2, 2, 0, -1}};
+	Matrix<EdgeCost> weights{
+		MakeEdgeCosts({-1, 1, 0, 0, -1, 2, 2, 0, -1}, 3)};
 	MockGraph no_exclude_graph;
 	for (int i{0}; i < 3; ++i) {
 		for (int j{0}; j < 3; ++j) {
-			EXPECT_CALL(no_exclude_graph, Predicate(i, j)).WillRepeatedly(
-					Return(weights(i, j)));
-			EXPECT_CALL(no_exclude_graph, Predicate(Edge{i, j})).WillRepeatedly(
-					Return(weights(i, j)));
+			EXPECT_CALL(Const(no_exclude_graph), Predicate(i, j)).
+				WillRepeatedly(ReturnRef(weights(i, j)));
+			EXPECT_CALL(Const(no_exclude_graph), Predicate(Edge{i, j})).
+				WillRepeatedly(ReturnRef(weights(i, j)));
 		}
 	}
 	EXPECT_CALL(no_exclude_graph, GetNumVertices()).WillRepeatedly(Return(3));
@@ -131,14 +135,14 @@ TEST_F(TreeNodeTest, CalcLBAndNextEdgeNoExclude) {
 }
 
 TEST_F(TreeNodeTest, CalcLBAndNextEdge2by2Zeros) {
-	Matrix<int> weights{3, {-1, 0, 1, 0, -1, 0, 0, 1, -1}};
+	Matrix<EdgeCost> weights{MakeEdgeCosts({-1, 0, 1, 0, -1, 0, 0, 1, -1}, 3)};
 	MockGraph test_graph;
 	for (int i{0}; i < 3; ++i) {
 		for (int j{0}; j < 3; ++j) {
-			EXPECT_CALL(test_graph, Predicate(i, j)).WillRepeatedly(
-					Return(weights(i, j)));
-			EXPECT_CALL(test_graph, Predicate(Edge{i, j})).WillRepeatedly(
-					Return(weights(i, j)));
+			EXPECT_CALL(Const(test_graph), Predicate(i, j)).WillRepeatedly(
+					ReturnRef(weights(i, j)));
+			EXPECT_CALL(Const(test_graph), Predicate(Edge{i, j})).
+				WillRepeatedly(ReturnRef(weights(i, j)));
 		}
 	}
 	EXPECT_CALL(test_graph, GetNumVertices()).WillRepeatedly(Return(3));

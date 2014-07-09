@@ -8,12 +8,12 @@
 #include <utility>
 #include <limits>
 
+#include "graph/edge_cost.hpp"
 #include "graph/graph.hpp"
 #include "matrix.hpp"
 #include "path.hpp"
 #include "tsp_solver/little_tsp/cost_matrix.hpp"
-#include "tsp_solver/little_tsp/cost_matrix_integer.hpp"
-#include "tsp_solver/little_tsp/little_tsp_util.hpp"
+#include "util.hpp"
 
 using std::back_inserter;
 using std::deque;
@@ -27,14 +27,14 @@ using std::numeric_limits;
 using std::ostream;
 using std::vector;
 
-using cmi_pair_t = std::pair<CostMatrixInteger, CostMatrixInteger>;
+using cmi_pair_t = std::pair<EdgeCost, EdgeCost>;
 using two_smallest_t = std::vector<cmi_pair_t>;
 
 const int infinity{numeric_limits<int>::max()};
 
-static void UpdateTwoSmallest(const CostMatrixInteger& current,
-		pair<CostMatrixInteger, CostMatrixInteger>& two_smallest);
-static CostMatrixInteger GetPenalty(const Edge& edge,
+static void UpdateTwoSmallest(const EdgeCost& current,
+		pair<EdgeCost, EdgeCost>& two_smallest);
+static EdgeCost GetPenalty(const Edge& edge,
 		const cmi_pair_t& penalties);
 static vector<CostMatrixZero> FindZerosAndPenalties(
 		const CostMatrix& cost_matrix);
@@ -111,7 +111,7 @@ Path TreeNode::GetTSPPath() const {
 int TreeNode::CalculateLowerBound() const {
 	return accumulate(include_.begin(), include_.end(), 0,
 			[this](int current_lb, Edge e)
-			{ return current_lb + (*graph_ptr_)(e); });
+			{ return current_lb + (*graph_ptr_)(e)(); });
 }
 
 ostream& operator<<(ostream& os, const TreeNode& p) {
@@ -172,8 +172,8 @@ bool TreeNode::HandleBaseCase(const CostMatrix& cost_matrix,
 
 vector<CostMatrixZero> FindZerosAndPenalties(const CostMatrix& cost_matrix) {
 	// hold the two smallest elements in each row and column
-	cmi_pair_t infinite_cmis{make_pair(CostMatrixInteger::Infinite(),
-		CostMatrixInteger::Infinite())};
+	cmi_pair_t infinite_cmis{make_pair(EdgeCost::Infinite(),
+		EdgeCost::Infinite())};
 	two_smallest_t two_smallest_row(cost_matrix.GetActualSize(), infinite_cmis);
 	two_smallest_t two_smallest_column(cost_matrix.GetActualSize(),
 			infinite_cmis);
@@ -182,10 +182,13 @@ vector<CostMatrixZero> FindZerosAndPenalties(const CostMatrix& cost_matrix) {
 	vector<Edge> zero_edges;
 
 	// find zeros and store two smallest elements
-	for (int i{0}; i < cost_matrix.Size(); ++i) {
-		for (int j{0}; j < cost_matrix.Size(); ++j) {
-			CostMatrixInteger current{cost_matrix(i, j)};
+	for (int i{0}; i < cost_matrix.GetActualSize(); ++i) {
+		if (!cost_matrix.IsRowAvailable(i)) { continue; }
+		for (int j{0}; j < cost_matrix.GetActualSize(); ++j) {
+			if (!cost_matrix.IsColumnAvailable(j)) { continue; }
+			EdgeCost current{cost_matrix(i, j)};
 			const Edge& current_edge{current.GetEdge()};
+			assert(i == current_edge.u && j == current_edge.v);
 			// find zeros
 			if (current() == 0) { zero_edges.push_back(current_edge); }
 			// look for two smallest elements
@@ -208,9 +211,9 @@ vector<CostMatrixZero> FindZerosAndPenalties(const CostMatrix& cost_matrix) {
 
 	for (const Edge& edge : zero_edges) {
 		// get the row and column penalties
-		CostMatrixInteger row_penalty{
+		EdgeCost row_penalty{
 			GetPenalty(edge, two_smallest_row[edge.u])};
-		CostMatrixInteger column_penalty{
+		EdgeCost column_penalty{
 			GetPenalty(edge, two_smallest_column[edge.v])};
 
 		// 2. case when excluding the node creates a disconnected graph
@@ -235,9 +238,9 @@ vector<CostMatrixZero> FindBaseCaseZerosAndPenalties(
 	vector<CostMatrixZero> cost_matrix_zeros;
 	for (const Edge& edge : zero_edges) {
 		// get the row and column penalties
-		CostMatrixInteger row_penalty{
+		EdgeCost row_penalty{
 			GetPenalty(edge, two_smallest_row[edge.u])};
-		CostMatrixInteger column_penalty{
+		EdgeCost column_penalty{
 			GetPenalty(edge, two_smallest_column[edge.v])};
 
 		// We need to know if penalty is zero or infinite so we can choose the 
@@ -252,8 +255,8 @@ vector<CostMatrixZero> FindBaseCaseZerosAndPenalties(
 	return cost_matrix_zeros;
 }
 
-void UpdateTwoSmallest(const CostMatrixInteger& current,
-		pair<CostMatrixInteger, CostMatrixInteger>& two_smallest) {
+void UpdateTwoSmallest(const EdgeCost& current,
+		pair<EdgeCost, EdgeCost>& two_smallest) {
 	if (current < two_smallest.first) {
 		two_smallest.second = two_smallest.first;
 		two_smallest.first = current;
@@ -261,7 +264,7 @@ void UpdateTwoSmallest(const CostMatrixInteger& current,
 	{ two_smallest.second = current; }
 }
 
-CostMatrixInteger GetPenalty(const Edge& edge, const cmi_pair_t& penalties) {
+EdgeCost GetPenalty(const Edge& edge, const cmi_pair_t& penalties) {
 	if (penalties.first.GetEdge() != edge) { return penalties.first; }
 	return penalties.second;
 }

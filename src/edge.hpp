@@ -9,11 +9,11 @@ struct Edge {
 	Edge(const Edge&) = default;
 
 	bool operator==(const Edge& other) const {
-		return u == other.u && v == other.v; 
+		return u == other.u && v == other.v;
 	}
 	bool operator!=(const Edge& other) const { return !(*this == other); }
 
-	int u, v; 
+	int u, v;
 };
 
 std::ostream& operator<<(std::ostream& os, const Edge& e);

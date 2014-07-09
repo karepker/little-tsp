@@ -6,8 +6,10 @@
 #include <vector>
 
 #include "graph.hpp"
+#include "matrix.hpp"
 
-struct Coordinate;
+struct Edge;
+struct EdgeCost;
 
 class ManhattanGraph : public Graph {
 public:
@@ -15,20 +17,22 @@ public:
 	explicit ManhattanGraph(std::istream& input);
 
 	// gets information about the graph
-	int operator()(int row, int col) const override;
-	int operator()(const Edge& e) const override;
-	int GetNumVertices() const override { return vertices_.size(); }
+	EdgeCost& operator()(int row, int col) override;
+	const EdgeCost& operator()(int row, int col) const override;
+	EdgeCost& operator()(const Edge& e) override;
+	const EdgeCost& operator()(const Edge& e) const override;
+	int GetNumVertices() const override { return num_vertices_; }
 
 	// outputs size of wold, number of vertices, and then the graph itself
 	std::string Describe() const override;
 
 private:
-	// helper for getting the edge weight
-	int GetEdgeWeight(int from, int to) const;
+	// helper to make sure edges are in bounds
+	void ValidateEdge(int from, int to) const;
 
 	int world_size_;
 	int num_vertices_;
-	std::vector<Coordinate> vertices_;
+	Matrix<EdgeCost> edges_;
 };
 
 #endif  // MANHATTAN_GRAPH_H
