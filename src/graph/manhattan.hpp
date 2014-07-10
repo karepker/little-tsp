@@ -8,6 +8,8 @@
 #include "graph.hpp"
 #include "util.hpp"
 
+struct Edge;
+
 class ManhattanGraph : public Graph {
 public:
 	// construct a graph from input, by default, input assumed to be cin
@@ -15,6 +17,7 @@ public:
 
 	// gets information about the graph
 	int operator()(int row, int col) const override;
+	int operator()(Edge e) const override;
 	int GetNumVertices() const override { return vertices_.size(); }
 
 	// outputs size of wold, number of vertices, and then the graph itself

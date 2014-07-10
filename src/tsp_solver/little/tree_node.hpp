@@ -1,22 +1,20 @@
-#ifndef LITTLE_TSP_TREE_NODE_H
-#define LITTLE_TSP_TREE_NODE_H
+#ifndef TSP_SOLVER_LITTLE_TREE_NODE_H
+#define TSP_SOLVER_LITTLE_TREE_NODE_H
 
 #include <vector>
 #include <iostream>
 
+#include "graph/edge.hpp"
 #include "matrix.hpp"
 
 // forward declare
-class CostMatrix;  // defined in the cpp file
+class CostMatrix;
 class Graph;
 class Path;
-
-struct Edge { int u, v; };
 
 class TreeNode {
 public:
 	// some constructors
-	TreeNode();
 	explicit TreeNode(const Graph& costs);
 	// copy constructor
 	TreeNode(const TreeNode& old, Edge e, bool inc);
@@ -27,7 +25,7 @@ public:
 	void AddExclude(const Edge& e);
 
 	// methods to deal with infinite
-	bool IsInfinite(int i, int j) const { return infinite_(i, j); };
+	bool IsInfinite(int i, int j) const { return infinite_.GetEntry(i, j); };
 	void SetInfinite(int i, int j) { infinite_.SetEntry(i, j, true); };
 
 	// getters
@@ -36,20 +34,22 @@ public:
 	// branching methods
 	bool HasExcludeBranch() const { return has_exclude_branch_; };
 	Edge GetNextEdge() const { return next_edge_; };
-	
+
 	// branch determination methods
 	// use the current list of includes to recalculate the lower bound and
 	// mark unavailable rows/columns that have been visited
-	void SetAvailAndLB(const Graph& graph, CostMatrix& info);
+	void SetAvailAndLB(CostMatrix& info);
 	// calculate the lower bound and the next edge, return true if a next edge
 	// was found
-	bool CalcLBAndNextEdge(const Graph& graph);
-	Path GetTSPPath(const Graph& graph) const;
-	
+	bool CalcLBAndNextEdge();
+	Path GetTSPPath() const;
+
 	// ostream operator
 	friend std::ostream& operator<<(std::ostream& os, const TreeNode& p);
 
 private:
+	const Graph* graph_ptr_;
+
 	// edges that are being included 
 	std::vector<Edge> include;
 
@@ -66,4 +66,4 @@ private:
 	int lower_bound_;
 };
 
-#endif  // LITTLE_TSP_TREE_NODE_H
+#endif  // TSP_SOLVER_LITTLE_TREE_NODE_H

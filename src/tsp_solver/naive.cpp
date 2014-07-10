@@ -1,9 +1,9 @@
-#include "naive_tsp_solver.hpp"
+#include "tsp_solver/naive.hpp"
 
 #include <limits>
 #include <vector>
 
-#include "graph.hpp"
+#include "graph/graph.hpp"
 #include "path.hpp"
 
 using std::vector;

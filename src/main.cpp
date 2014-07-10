@@ -5,12 +5,12 @@
 #include <iostream>
 #include <memory>
 
-#include "graph_factory.hpp"
-#include "graph.hpp"
+#include "graph/factory.hpp"
+#include "graph/graph.hpp"
 #include "interaction.hpp"
 #include "path.hpp"
-#include "tsp_solver_factory.hpp"
-#include "tsp_solver.hpp"
+#include "tsp_solver/factory.hpp"
+#include "tsp_solver/tsp_solver.hpp"
 #include "util.hpp"
 
 using std::cin;
@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
 		cout << "Implementation Error: " << ie.what() << endl;
 		return 2;
 	} catch (...) {
-		cout << "Unknown Error!" << endl; 
+		cout << "Unknown Error!" << endl;
 		return 3;
 	}
 

@@ -1,6 +1,6 @@
-#include "tsp_solver.hpp"
+#include "tsp_solver/tsp_solver.hpp"
 
-#include "graph.hpp"
+#include "graph/graph.hpp"
 #include "path.hpp"
 
 // for testing

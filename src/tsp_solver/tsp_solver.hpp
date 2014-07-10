@@ -1,5 +1,5 @@
-#ifndef TSP_SOLVER_H
-#define TSP_SOLVER_H
+#ifndef TSP_SOLVER_TSP_SOLVER_H
+#define TSP_SOLVER_TSP_SOLVER_H
 
 // forward declarations
 class Graph;
@@ -27,4 +27,4 @@ private:
 	bool optimal_;
 };
 
-#endif  // TSP_SOLVER_H
+#endif  // TSP_SOLVER_TSP_SOLVER_H

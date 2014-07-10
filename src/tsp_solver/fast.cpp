@@ -1,9 +1,9 @@
-#include "fast_tsp_solver.hpp"
+#include "tsp_solver/fast.hpp"
 
 #include <unordered_set>
 #include <algorithm>
 
-#include "graph.hpp"
+#include "graph/graph.hpp"
 #include "path.hpp"
 
 using std::vector;
@@ -48,7 +48,7 @@ Path FastTSPSolver::Solve(const Graph& graph) const {
 	if (!remaining.empty())
 	{
 		// find the min distance to a vertex
-		int minIndex = *min_element(remaining.cbegin(), 
+		int minIndex = *min_element(remaining.cbegin(),
 			remaining.cend(), t);
 		salespath.vertices.push_back(minIndex);
 		remaining.erase(minIndex);
@@ -58,7 +58,7 @@ Path FastTSPSolver::Solve(const Graph& graph) const {
 	while (!remaining.empty())
 	{
 		// find the min distance to a vertex
-		int minIndex = *min_element(remaining.cbegin(), 
+		int minIndex = *min_element(remaining.cbegin(),
 			remaining.cend(), t);
 		remaining.erase(minIndex);
 
@@ -73,12 +73,11 @@ Path FastTSPSolver::Solve(const Graph& graph) const {
 		int minCost = newDistance - oldDistance;
 
 		// find the two vertices that has the smallest cost of insertion
-		for (int i = 1; i < int(salespath.vertices.size()) - 1; ++i)
-		{
+		for (int i = 1; i < int(salespath.vertices.size()) - 1; ++i) {
 			int oldDist = graph(salespath.vertices[i],
 				salespath.vertices[i + 1]);
 			int newDist = graph(salespath.vertices[i],
-				minIndex) + graph(salespath.vertices[i + 1], 
+				minIndex) + graph(salespath.vertices[i + 1],
 				minIndex);
 			int cost = newDist - oldDist;
 			if (cost < minCost)
@@ -105,9 +104,8 @@ Path FastTSPSolver::Solve(const Graph& graph) const {
 	}
 
 	// calculate and set the length of the path
-	for (int i = 0; i < int(salespath.vertices.size()); ++i)
-	{
-		salespath.length += graph(salespath.vertices[i], 
+	for (int i = 0; i < int(salespath.vertices.size()); ++i) {
+		salespath.length += graph(salespath.vertices[i],
 			salespath.vertices[(i + 1) % salespath.vertices.size()]);
 	}
 

@@ -1,4 +1,4 @@
-#include "little_tsp_tree_node.hpp"
+#include "tsp_solver/little/tree_node.hpp"
 
 #include <cassert>
 
@@ -6,7 +6,7 @@
 #include <deque>
 #include <limits>
 
-#include "graph.hpp"
+#include "graph/graph.hpp"
 #include "matrix.hpp"
 #include "path.hpp"
 
@@ -24,8 +24,8 @@ const int infinity{numeric_limits<int>::max()};
 // temporary that is used to help build a TreeNode
 class CostMatrix {
 public:
-	CostMatrix(int size) : row_reductions_(size, 0), 
-		column_reductions_(size, 0), row_available_(size, true), 
+	CostMatrix(int size) : row_reductions_(size, 0),
+		column_reductions_(size, 0), row_available_(size, true),
 		column_available_(size, true) {};
 
 	// reduce the matrix by storing information about reduction
@@ -66,7 +66,7 @@ int CostMatrix::ReduceRow(int i, const Graph& graph, const TreeNode& p) {
 		{
 			if (column_available_[j] && !p.IsInfinite(i, j))
 			{
-				int current{graph(i, j) - 
+				int current{graph(i, j) -
 					row_reductions_[i] - column_reductions_[j]};
 				if (current < smallest_elt) { smallest_elt = current; }
 			}
@@ -91,7 +91,7 @@ int CostMatrix::ReduceCol(int j, const Graph& graph, const TreeNode& p)
 		{
 			if (row_available_[i] && !p.IsInfinite(i, j))
 			{
-				int current = graph(i, j) - 
+				int current = graph(i, j) -
 					row_reductions_[i] - column_reductions_[j];
 				if (current < smallest_elt) { smallest_elt = current; }
 			}
@@ -107,30 +107,28 @@ int CostMatrix::ReduceMatrix(const Graph& graph, const TreeNode& p) {
 	int dec{0};
 
 	// reduce the rows
-	for (int i{0}; i < graph.GetNumVertices(); ++i) { 
-		dec += ReduceRow(i, graph, p); 
-	}
+	for (int i{0}; i < graph.GetNumVertices(); ++i)
+	{ dec += ReduceRow(i, graph, p); }
 
 	// reduce the columns
-	for (int j{0}; j < graph.GetNumVertices(); ++j) { 
-		dec += ReduceCol(j, graph, p); 
-	}
+	for (int j{0}; j < graph.GetNumVertices(); ++j)
+	{ dec += ReduceCol(j, graph, p); }
 
 	// return the total reduction
 	return dec;
 }
 
 // constructor for the "root" TreeNode
-TreeNode::TreeNode(const Graph& costs) :
-		infinite_{costs.GetNumVertices(), costs.GetNumVertices()}, 
-		has_exclude_branch_{true}, lower_bound_{infinity} {
+TreeNode::TreeNode(const Graph& costs) : graph_ptr_{&costs},
+		infinite_{costs.GetNumVertices()}, has_exclude_branch_{true},
+		lower_bound_{infinity} {
 	// set all elements on the diagonal as infinite
 	for (int diag{0}; diag < costs.GetNumVertices(); ++diag)
-		{ SetInfinite(diag, diag); }
+	{ SetInfinite(diag, diag); }
 }
 
 TreeNode::TreeNode(const TreeNode& old, Edge e, bool inc) : TreeNode{old}
-	{ inc ? AddInclude(e) : AddExclude(e); }
+{ inc ? AddInclude(e) : AddExclude(e); }
 
 void TreeNode::AddInclude(const Edge& e) {
 	// find the largest subtour involving the edge to add
@@ -170,13 +168,13 @@ void TreeNode::AddInclude(const Edge& e) {
 
 void TreeNode::AddExclude(const Edge& e) { SetInfinite(e.u, e.v); }
 
-void TreeNode::SetAvailAndLB(const Graph& graph, CostMatrix& info) {
+void TreeNode::SetAvailAndLB(CostMatrix& info) {
 	// reset lower bound
 	lower_bound_ = 0;
 
 	// start its calculation using the cost of the includes
 	for (const Edge& e : include) {
-		lower_bound_ += graph(e.u, e.v);
+		lower_bound_ += (*graph_ptr_)(e.u, e.v);
 		info.SetRowUnavailable(e.u);
 		info.SetColumnUnavailable(e.v);
 	}
@@ -184,7 +182,7 @@ void TreeNode::SetAvailAndLB(const Graph& graph, CostMatrix& info) {
 
 // build the TSP path once it exists
 // this method will infinite loop if there is not a full path
-Path TreeNode::GetTSPPath(const Graph& graph) const {
+Path TreeNode::GetTSPPath() const {
 	// create the solution path
 	Path solution;
 	solution.vertices.reserve(include.size());
@@ -195,8 +193,8 @@ Path TreeNode::GetTSPPath(const Graph& graph) const {
 
 	// sort the edges and then find the path through them
 	vector<Edge> edges = include;
-	sort(edges.begin(), edges.end(), 
-			[](const Edge& first, const Edge& second) 
+	sort(edges.begin(), edges.end(),
+			[](const Edge& first, const Edge& second)
 			{ return first.u < second.u; });
 
 	for (int i{0}; i < int(edges.size()); ++i) {
@@ -205,13 +203,13 @@ Path TreeNode::GetTSPPath(const Graph& graph) const {
 		vertex = edges[vertex].v;
 
 		// incremement the length of the path
-		solution.length += graph(past_vertex, vertex);
+		solution.length += (*graph_ptr_)(past_vertex, vertex);
 		past_vertex = vertex;
 	}
 
 	// finish the path
 	assert(vertex == 0);
-	solution.length += graph(past_vertex, vertex);
+	solution.length += (*graph_ptr_)(past_vertex, vertex);
 
 	return solution;
 }
@@ -223,25 +221,25 @@ ostream& operator<<(ostream& os, const TreeNode& p) {
 	return os;
 }
 
-bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
+bool TreeNode::CalcLBAndNextEdge() {
 	// information about the useable matrix
-	CostMatrix info(graph.GetNumVertices());
+	CostMatrix info(graph_ptr_->GetNumVertices());
 
 	// calculate the initial LB from edges already included
 	// also, set any edges that would create a subtour as infinite
-	SetAvailAndLB(graph, info);
+	SetAvailAndLB(info);
 
 	// reduce the matrix, increment the lower bound from the reduction
-	lower_bound_ += info.ReduceMatrix(graph, *this);
+	lower_bound_ += info.ReduceMatrix(*graph_ptr_, *this);
 
 	// find all the zeros in the matrix
 	vector<Edge> zeros;
-	for (int i{0}; i < graph.GetNumVertices(); ++i)
+	for (int i{0}; i < graph_ptr_->GetNumVertices(); ++i)
 	{
 		if (info.IsRowAvailable(i)) {
-			for (int j{0}; j < graph.GetNumVertices(); ++j) {
+			for (int j{0}; j < graph_ptr_->GetNumVertices(); ++j) {
 				if (info.IsColumnAvailable(j) && !IsInfinite(i, j)) {
-					if (graph(i, j) - info.GetRowReduction(i) - 
+					if ((*graph_ptr_)(i, j) - info.GetRowReduction(i) -
 						info.GetColumnReduction(j) == 0) {
 						zeros.push_back({ i, j });
 					}
@@ -249,8 +247,8 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 			}
 		}
 	}
-	
-	
+
+
 	// get a penalty associated with each zero
 	vector<int> penalties(zeros.size());
 	int counter{0};
@@ -262,41 +260,42 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 		int min_row{infinity};
 
 		// check for largest distance in row
-		for (int i = 0; i < graph.GetNumVertices(); ++i)
+		for (int i = 0; i < graph_ptr_->GetNumVertices(); ++i)
 		{
 			// INVARIANT: column is always available
-			if (info.IsRowAvailable(i) && !IsInfinite(i, zero.v) && 
-					i != zero.u && graph(i, zero.v) - info.GetRowReduction(i) - 
+			if (info.IsRowAvailable(i) && !IsInfinite(i, zero.v) &&
+					i != zero.u && (*graph_ptr_)(i, zero.v) -
+					info.GetRowReduction(i) -
 					info.GetColumnReduction(zero.v) < min_row) {
-				min_row = graph(i, zero.v) - info.GetRowReduction(i) - 
+				min_row = (*graph_ptr_)(i, zero.v) - info.GetRowReduction(i) -
 					info.GetColumnReduction(zero.v);
 				found_min_row = true;
 			}
 		}
 
 		// check largest distance in col
-		for (int j = 0; j < graph.GetNumVertices(); ++j) {
+		for (int j = 0; j < graph_ptr_->GetNumVertices(); ++j) {
 			// INVARIANT: row is always available
-			if (info.IsColumnAvailable(j) && !IsInfinite(zero.u, j) && 
-					zero.v != j && graph(zero.u, j) - 
-					info.GetRowReduction(zero.u) - 
+			if (info.IsColumnAvailable(j) && !IsInfinite(zero.u, j) &&
+					zero.v != j && (*graph_ptr_)(zero.u, j) -
+					info.GetRowReduction(zero.u) -
 					info.GetColumnReduction(j) < min_col) {
-				min_col = graph(zero.u, j) - info.GetRowReduction(zero.u) -
-					info.GetColumnReduction(j);
+				min_col = (*graph_ptr_)(zero.u, j) -
+					info.GetRowReduction(zero.u) - info.GetColumnReduction(j);
 				found_min_col = true;
 			}
 		}
 
 		// 3 cases
 		// 1. base case: 2 edges left to add
-		if (graph.GetNumVertices() - include.size() == 2) {
+		if (graph_ptr_->GetNumVertices() - include.size() == 2) {
 			penalties[counter++] = infinity;
 			break;
 		}
 
 		// 2. case when excluding the node creates a disconnected graph
-		else if (found_min_col != found_min_row && 
-				graph.GetNumVertices() - include.size() != 2) {
+		else if (found_min_col != found_min_row &&
+				graph_ptr_->GetNumVertices() - include.size() != 2) {
 			// we must choose this edge and cannot branch
 			next_edge_ = zero;
 			has_exclude_branch_ = false;
@@ -311,7 +310,7 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 	int index(max_penalty_it - penalties.begin());
 
 	// handle the base case
-	if (graph.GetNumVertices() - include.size() == 2) {
+	if (graph_ptr_->GetNumVertices() - include.size() == 2) {
 		AddInclude(zeros[index]);
 		info.SetRowUnavailable(zeros[index].u);
 		info.SetColumnUnavailable(zeros[index].v);
@@ -319,13 +318,13 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 		int col{0};
 
 		// INVARIANT: only one valid edge left, find it
-		for (int i{0}; i < graph.GetNumVertices(); ++i) {
+		for (int i{0}; i < graph_ptr_->GetNumVertices(); ++i) {
 			if (info.IsRowAvailable(i)) {
 				row = i;
 				break;
 			}
 		}
-		for (int j{0}; j < graph.GetNumVertices(); ++j) {
+		for (int j{0}; j < graph_ptr_->GetNumVertices(); ++j) {
 			if (info.IsColumnAvailable(j)) {
 				col = j;
 				break;
@@ -334,7 +333,7 @@ bool TreeNode::CalcLBAndNextEdge(const Graph& graph) {
 		AddInclude({ row, col });
 
 		// recalculate LB, i.e. the length of the TSP tour
-		SetAvailAndLB(graph, info);
+		SetAvailAndLB(info);
 		found_lb_and_edge_ = true;
 		return false;  // no next edge, we have a complete tour
 	}

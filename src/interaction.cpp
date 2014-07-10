@@ -54,7 +54,7 @@ programmode_t parseArgs(int argc, char* argv[])
 		};
 		int optionIndex{0};
 		c = getopt_long(argc, argv, "hm:", longOptions, &optionIndex);
-		
+
 		// detect the end of the options
 		if (c == -1) { break; }
 
@@ -69,7 +69,7 @@ programmode_t parseArgs(int argc, char* argv[])
 			case 'h':
 				while (getline(help, line)) { cout << line << endl; }
 				exit(0);
-				break; 
+				break;
 
 			case 'm':
 				mode = checkMode(optarg);
@@ -90,5 +90,3 @@ programmode_t parseArgs(int argc, char* argv[])
 	if (mode == NOT_SET) { mode = DEFAULT_MODE; }
 	return mode;
 }
-
-

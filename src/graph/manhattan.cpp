@@ -1,9 +1,11 @@
-#include "manhattan_graph.hpp"
+#include "graph/manhattan.hpp"
 
 #include <iostream>
-#include <string>
 #include <sstream>
+#include <string>
 #include <vector>
+
+#include "graph/edge.hpp"
 
 using std::cin;
 using std::endl;
@@ -11,6 +13,7 @@ using std::istream;
 using std::ostream;
 using std::string;
 using std::stringstream;
+using std::to_string;
 using std::vector;
 
 ManhattanGraph::ManhattanGraph(istream& input = cin)
@@ -52,17 +55,17 @@ ManhattanGraph::ManhattanGraph(istream& input = cin)
 
 int ManhattanGraph::operator()(int from, int to) const {
 	if (from < 0 || from > num_vertices_ || to < 0 || to > num_vertices_) {
-		stringstream msg;
-		msg << "Bad from or toumn provided: (" << from << ", " << to << 
-			") limit is: " << num_vertices_ << endl;
-		throw ImplementationError{msg.str().c_str()};
+		string message{"Bad from or to provided: (" + to_string(from) + ", " +
+			to_string(to) +	") limit is: " + to_string(num_vertices_) + "\n"};
+		throw ImplementationError{message.c_str()};
 	}
-	return abs(vertices_[from].x - vertices_[to].x) + 
+	return abs(vertices_[from].x - vertices_[to].x) +
 		abs(vertices_[from].y - vertices_[to].y);
 }
 
-string ManhattanGraph::Describe() const
-{
+int ManhattanGraph::operator()(Edge e) const { return operator()(e.u, e.v); }
+
+string ManhattanGraph::Describe() const {
 	stringstream ss;
 
 	// print information about the word
@@ -71,13 +74,12 @@ string ManhattanGraph::Describe() const
 
 	// print the rows
 	ss << "   ";
-	for(int i = 0; i < num_vertices_; ++i) { ss << i << " "; }
+	for (int i = 0; i < num_vertices_; ++i) { ss << i << " "; }
 	ss << endl;
-	for(int row = 0; row < num_vertices_; ++row) {
+	for (int row = 0; row < num_vertices_; ++row) {
 		ss << " " << row << " ";
-		for(int col = 0; col < num_vertices_; ++col) { 
-			ss << operator()(row, col) << " "; 
-		}
+		for(int col = 0; col < num_vertices_; ++col)
+		{ ss << operator()(row, col) << " "; }
 		ss << endl;
 	}
 	return ss.str();

@@ -1,7 +1,7 @@
-#ifndef NAIVE_TSP_SOLVER_H
-#define NAIVE_TSP_SOLVER_H
+#ifndef TSP_SOLVER_NAIVE_H
+#define TSP_SOLVER_NAIVE_H
 
-#include "tsp_solver.hpp"
+#include "tsp_solver/tsp_solver.hpp"
 
 /* Solves the TSP using a naive optimal solution */
 class NaiveTSPSolver : public TSPSolver {
@@ -11,4 +11,4 @@ public:
 	Path Solve(const Graph&) const override;
 };
 
-#endif  // NAIVE_TSP_SOLVER_H
+#endif  // TSP_SOLVER_NAIVE_H
