@@ -8,9 +8,9 @@ set(SRCS
 	path.cpp
 	tsp_solver/factory.cpp
 	tsp_solver/fast_tsp_solver.cpp
-	tsp_solver/little_tsp/cost_matrix.cpp
-	tsp_solver/little_tsp/solver.cpp
-	tsp_solver/little_tsp/tree_node.cpp
+	tsp_solver/little/cost_matrix.cpp
+	tsp_solver/little/solver.cpp
+	tsp_solver/little/tree_node.cpp
 	tsp_solver/naive_tsp_solver.cpp
 	tsp_solver/tsp_solver.cpp)
 
@@ -19,8 +19,8 @@ set(MAIN_SRC main.cpp)
 set(UNITTEST_SRCS
 	graph/edge_cost_test.cpp
 	graph/mock.cpp
-	tsp_solver/little_tsp/cost_matrix_test.cpp
-	tsp_solver/little_tsp/tree_node_test.cpp)
+	tsp_solver/little/cost_matrix_test.cpp
+	tsp_solver/little/tree_node_test.cpp)
 
 set(DEBUG_OBJECT_LIBRARY "debug_objects")
 set(DEBUG_BINARY "littletspd")
