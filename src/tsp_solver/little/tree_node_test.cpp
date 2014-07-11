@@ -3,6 +3,7 @@
 #include <vector>
 
 //#include "graph/edge_cost.hpp"
+#include "graph/edge.hpp"
 #include "graph/mock.hpp"
 #include "matrix.hpp"
 #include "path.hpp"
@@ -33,9 +34,8 @@ public:
 			for (int j{0}; j < 6; ++j) {
 				EXPECT_CALL(Const(graph), Predicate(i, j)).WillRepeatedly(
 						Return(graph_weights(i, j)));
-				/*
 				EXPECT_CALL(Const(graph), Predicate(Edge{i, j})).WillRepeatedly(
-						ReturnRef(graph_weights(i, j))); */
+						ReturnRef(graph_weights(i, j)));
 			}
 		}
 		EXPECT_CALL(graph, GetNumVertices()).WillRepeatedly(Return(6));
@@ -97,9 +97,8 @@ TEST_F(TreeNodeTest, CalcLBAndNextEdgeNoExclude) {
 		for (int j{0}; j < 3; ++j) {
 			EXPECT_CALL(Const(no_exclude_graph), Predicate(i, j)).
 				WillRepeatedly(Return(weights(i, j)));
-			/*
 			EXPECT_CALL(Const(no_exclude_graph), Predicate(Edge{i, j})).
-				WillRepeatedly(ReturnRef(weights(i, j))); */
+				WillRepeatedly(ReturnRef(weights(i, j)));
 		}
 	}
 	EXPECT_CALL(no_exclude_graph, GetNumVertices()).WillRepeatedly(Return(3));
@@ -142,9 +141,8 @@ TEST_F(TreeNodeTest, CalcLBAndNextEdge2by2Zeros) {
 		for (int j{0}; j < 3; ++j) {
 			EXPECT_CALL(Const(test_graph), Predicate(i, j)).WillRepeatedly(
 					Return(weights(i, j)));
-			/*
 			EXPECT_CALL(Const(test_graph), Predicate(Edge{i, j})).
-				WillRepeatedly(ReturnRef(weights(i, j))); */
+				WillRepeatedly(ReturnRef(weights(i, j)));
 		}
 	}
 	EXPECT_CALL(test_graph, GetNumVertices()).WillRepeatedly(Return(3));
