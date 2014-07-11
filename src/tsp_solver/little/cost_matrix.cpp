@@ -1,4 +1,4 @@
-#include "tsp_solver/little_tsp/cost_matrix.hpp"
+#include "tsp_solver/little/cost_matrix.hpp"
 
 #include <cassert>
 
@@ -32,8 +32,7 @@ const int infinity{numeric_limits<int>::max()};
 static vector<int> MakeVectorMapping(const vector<bool>& available);
 
 CostMatrix::CostMatrix(const Graph& graph, const vector<Edge>& include,
-		const vector<Edge>& exclude) : graph_{graph},
-		infinite_{graph.GetNumVertices(), graph.GetNumVertices(), 0} {
+		const Matrix<int>& exclude) : graph_{graph}, infinite_{exclude} {
 	vector<bool> row_available(graph.GetNumVertices(), true);
 	vector<bool> column_available(graph.GetNumVertices(), true);
 	int available_rows{graph.GetNumVertices()};
@@ -54,13 +53,6 @@ CostMatrix::CostMatrix(const Graph& graph, const vector<Edge>& include,
 
 	row_reductions_ = vector<int>(GetActualSize(), 0);
 	column_reductions_ = vector<int>(GetActualSize(), 0);
-
-	// mark cells that have been excluded as infinite
-	for (const Edge& e : exclude) {
-		if (!row_available[e.u] || !column_available[e.v]) { continue; }
-		// binary search the mappings to convert actual => condensed
-		infinite_(e.u, e.v) = 1;
-	}
 }
 
 int CostMatrix::ReduceMatrix() {

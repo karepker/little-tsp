@@ -1,4 +1,4 @@
-#include "tsp_solver/little_tsp/solver.hpp"
+#include "tsp_solver/little/solver.hpp"
 
 #include <cassert>
 
@@ -8,7 +8,7 @@
 
 #include "graph/graph.hpp"
 #include "path.hpp"
-#include "tsp_solver/little_tsp/tree_node.hpp"
+#include "tsp_solver/little/tree_node.hpp"
 
 using std::cout;
 using std::endl;

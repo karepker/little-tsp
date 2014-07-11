@@ -10,6 +10,8 @@ template <class T>
 class Matrix {
 public:
 	Matrix() : rows_{0} {}
+	Matrix(int square_size) : rows_{square_size},
+		entries_(square_size * square_size) {}
 	Matrix(int rows, int cols) : rows_{rows}, entries_(rows * cols) {}
 	Matrix(int rows, int cols, T initial_value) : rows_{rows},
 		entries_(rows * cols, initial_value) {}
@@ -29,7 +31,6 @@ public:
 
 	// operators for getting costs
 	T& operator()(int row, int col) { return entries_[row * rows_ + col]; }
-
 	const T& operator()(int row, int col) const
 	{ return entries_[row * rows_ + col]; }
 

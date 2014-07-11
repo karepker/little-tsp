@@ -5,7 +5,7 @@
 
 #include "tsp_solver/tsp_solver.hpp"
 #include "tsp_solver/naive_tsp_solver.hpp"
-#include "tsp_solver/little_tsp/solver.hpp"
+#include "tsp_solver/little/solver.hpp"
 #include "tsp_solver/fast_tsp_solver.hpp"
 #include "util.hpp"
 

@@ -16,7 +16,7 @@ class Graph;
 class CostMatrix {
 public:
 	CostMatrix(const Graph& graph, const std::vector<Edge>& include,
-			const std::vector<Edge>& exclude);
+			const Matrix<int>& exclude);
 
 	int ReduceMatrix();
 
@@ -162,7 +162,7 @@ private:
 	{ return column_mapping_[column_num]; }
 
 	const Graph& graph_;
-	Matrix<int> infinite_;
+	const Matrix<int>& infinite_;
 	int size_;
 	// map actual cell => condensed cell
 	std::vector<int> row_mapping_;

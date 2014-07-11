@@ -1,4 +1,4 @@
-#include "tsp_solver/little_tsp/tree_node.hpp"
+#include "tsp_solver/little/tree_node.hpp"
 
 #include <cassert>
 
@@ -12,7 +12,7 @@
 #include "graph/graph.hpp"
 #include "matrix.hpp"
 #include "path.hpp"
-#include "tsp_solver/little_tsp/cost_matrix.hpp"
+#include "tsp_solver/little/cost_matrix.hpp"
 #include "util.hpp"
 
 using std::back_inserter;
@@ -44,11 +44,11 @@ static vector<CostMatrixZero> FindBaseCaseZerosAndPenalties(
 		const two_smallest_t& two_smallest_column);
 
 TreeNode::TreeNode(const Graph& costs) : graph_ptr_{&costs},
+		exclude_{costs.GetNumVertices(), costs.GetNumVertices(), 0},
 		next_edge_{-1, -1}, has_exclude_branch_{false}, lower_bound_{infinity} {
 	// exclude all cells along the diagonal, we don't want self-loops
-	for (int diag{0}; diag < graph_ptr_->GetNumVertices(); ++diag) {
-		exclude_.push_back({diag, diag});
-	}
+	for (int diag{0}; diag < graph_ptr_->GetNumVertices(); ++diag)
+	{ AddExclude(Edge{diag, diag}); }
 }
 
 void TreeNode::AddInclude(const Edge& e) {
@@ -80,7 +80,7 @@ void TreeNode::AddInclude(const Edge& e) {
 	include_.push_back(e);
 
 	// make the ends of the longest subtour infinite
-	exclude_.push_back({subtour.back(), subtour.front()});
+	AddExclude(Edge{subtour.back(), subtour.front()});
 }
 
 // build the TSP path once it exists

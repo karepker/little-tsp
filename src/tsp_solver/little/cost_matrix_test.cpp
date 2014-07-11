@@ -1,4 +1,4 @@
-#include "tsp_solver/little_tsp/cost_matrix.hpp"
+#include "tsp_solver/little/cost_matrix.hpp"
 
 #include <cassert>
 
@@ -39,9 +39,10 @@ using ::testing::ReturnRef;
 const int infinity{numeric_limits<int>::max()};
 
 const vector<Edge> include1;
-const vector<Edge> exclude1{{0, 0}};
+const vector<Edge> exclude1_edges{{0, 0}};
 const vector<Edge> include2{{0, 2}};
-const vector<Edge> exclude2{{0, 0}};
+const vector<Edge> exclude2_edges{{0, 0}};
+
 
 const Matrix<EdgeCost> graph_weights{
 	MakeEdgeCosts({6, 2, 4, 4, 5, 3, 8, 9, 7}, 3)};
@@ -59,6 +60,7 @@ protected:
 
 private:
 	MockGraph graph;
+	Matrix<int> exclude1, exclude2;
 };
 
 CostMatrixTest::CostMatrixTest() {
@@ -71,6 +73,11 @@ CostMatrixTest::CostMatrixTest() {
 	}
 
 	EXPECT_CALL(graph, GetNumVertices()).WillRepeatedly(Return(3));
+
+	exclude1.SetSize(3);
+	exclude2.SetSize(3);
+	for (const Edge& e : exclude1_edges) { exclude1(e.u, e.v) = 1; }
+	for (const Edge& e : exclude2_edges) { exclude2(e.u, e.v) = 1; }
 
 	// construct the matrix after we set expectations for the graph
 	matrix1_ptr = unique_ptr<CostMatrix>{

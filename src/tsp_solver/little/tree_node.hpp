@@ -20,7 +20,7 @@ public:
 	// Important methods
 	// add included and excluded vertices
 	void AddInclude(const Edge& e);
-	void AddExclude(const Edge& e) { exclude_.push_back(e); }
+	void AddExclude(const Edge& e) { exclude_(e.u, e.v) = 1; }
 
 	// getters
 	int GetLowerBound() const { return lower_bound_; }
@@ -47,7 +47,8 @@ private:
 
 	// edges that are being included and excluded
 	std::vector<Edge> include_;
-	std::vector<Edge> exclude_;
+	// not using bool because operator[] is slow, thanks Bjarne
+	Matrix<int> exclude_;
 
 	// keeping track for future TreeNodes
 	Edge next_edge_;

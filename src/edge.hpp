@@ -5,6 +5,7 @@
 
 // a simple edge structure
 struct Edge {
+	Edge() : u{-1}, v{-1} {}  // use invalid indices as default edge u and v
 	Edge(int u_, int v_) : u{u_}, v{v_} {}
 	Edge(const Edge&) = default;
 
