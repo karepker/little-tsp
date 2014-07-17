@@ -3,6 +3,8 @@
 
 #include "graph.hpp"
 
+#include <vector>
+
 #include "gmock/gmock.h"
 
 struct Edge;
@@ -36,4 +38,3 @@ public:
 Matrix<EdgeCost> MakeEdgeCosts(const std::vector<int>& weights, int size);
 
 #endif  // GRAPH_MOCK_H
-

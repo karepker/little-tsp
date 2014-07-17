@@ -20,12 +20,10 @@ using std::numeric_limits;
 using std::unordered_map;
 using std::vector;
 
-/*
 template <typename T>
 using CostVector = CostMatrix::CostVector<T>;
 using Row = CostMatrix::Row;
 using Column = CostMatrix::Column;
-*/
 
 const int infinity{numeric_limits<int>::max()};
 
@@ -60,30 +58,28 @@ int CostMatrix::ReduceMatrix() {
 	int decremented{0};
 
 	// find the row reductions
-	for (int row_num{0}; row_num < GetActualSize(); ++row_num) {
-		if (!IsRowAvailable(row_num)) { continue; }
+	for (int row_num{0}; row_num < GetCondensedSize(); ++row_num) {
+		CostVector<Row> row{GetRow(GetActualRowNum(row_num))};
 		// find min element of row `row_num` 
-		int min_elt{infinity};
-		for (int column_num{0}; column_num < GetActualSize(); ++column_num) {
-			if (!IsColumnAvailable(column_num)) { continue; }
-			min_elt = min((*this)(row_num, column_num)(), min_elt);
-		}
-		assert(min_elt != infinity);
-		row_reductions_[row_num] = min_elt;
+		auto min_elt_it = min_element(row.begin(), row.end());
+		assert(min_elt_it != row.end());
+		int min_elt{(*min_elt_it)()};
+		// abandon ship if the reduction is infinite
+		if (min_elt == infinity) { return infinity; }
+		row_reductions_[GetActualRowNum(row_num)] = min_elt;
 		decremented += min_elt;
 	}
 
 	// find the column reductions
-	for (int column_num{0}; column_num < GetActualSize(); ++column_num) {
-		if (!IsColumnAvailable(column_num)) { continue; }
+	for (int column_num{0}; column_num < GetCondensedSize(); ++column_num) {
+		CostVector<Column> column{GetColumn(GetActualColumnNum(column_num))};
 		// find min element of column `column_num`
-		int min_elt{infinity};
-		for (int row_num{0}; row_num < GetActualSize(); ++row_num) {
-			if (!IsRowAvailable(row_num)) { continue; }
-			min_elt = min((*this)(row_num, column_num)(), min_elt);
-		}
-		assert(min_elt != infinity);
-		column_reductions_[column_num] = min_elt;
+		auto min_elt_it = min_element(column.begin(), column.end());
+		assert(min_elt_it != column.end());
+		int min_elt{(*min_elt_it)()};
+		// abandon ship if the reduction is infinite
+		if (min_elt == infinity) { return infinity; }
+		column_reductions_[GetActualColumnNum(column_num)] = min_elt;
 		decremented += min_elt;
 	}
 
@@ -92,16 +88,17 @@ int CostMatrix::ReduceMatrix() {
 
 
 /*
-const CostMatrixInteger& CostMatrix::operator()(int row_num,
+const EdgeCost& CostMatrix::operator()(int row_num,
 		int column_num) const { return operator()(Edge{row_num, column_num}); }
-const CostMatrixInteger CostMatrix::operator()(
+const EdgeCost CostMatrix::operator()(
 		int row_num, int column_num) const {
 	if (infinite_(row_num, column_num)
-	{ return CostMatrixInteger::Infinite(Edge{row_num, column_num}); }
+	{ return EdgeCost::Infinite(Edge{row_num, column_num}); }
 	return cost_matrix_(row_num, column_num) - row_reductions_[row_num] -
 		column_reductions_[column_num];
 }
 */
+int CostMatrix::GetActualSize() const { return graph_.GetNumVertices(); }
 
 EdgeCost CostMatrix::operator()(int row_num, int column_num) const {
 	if (infinite_(row_num, column_num))
@@ -110,13 +107,12 @@ EdgeCost CostMatrix::operator()(int row_num, int column_num) const {
 		column_reductions_[column_num];
 }
 /*
-CostMatrixInteger& CostMatrix::operator()(const Edge& e) {
+EdgeCost& CostMatrix::operator()(const Edge& e) {
 	return cost_matrix_(e.u, e.v) - row_reductions_[e.u] -
 		column_reductions_[e.v];
 } */
 
 
-/*
 CostVector<Row> CostMatrix::GetRow(int row_num) {
 	return CostVector<Row>{this, Row{row_num}};
 }
@@ -125,11 +121,18 @@ CostVector<Column> CostMatrix::GetColumn(int column_num) {
 	return CostVector<Column>{this, Column{column_num}};
 }
 
-CostMatrixInteger& CostMatrix::Iterator::operator*()
-{ return (*cost_matrix_ptr_)(row_num_, column_num_); }
+EdgeCost CostMatrix::Iterator::operator*() {
+	return (*cost_matrix_ptr_)(
+			cost_matrix_ptr_->GetActualRowNum(row_num_),
+			cost_matrix_ptr_->GetActualColumnNum(column_num_));
+}
 
-CostMatrixInteger* CostMatrix::Iterator::operator->()
-{ return &(*cost_matrix_ptr_)(row_num_, column_num_); }
+/*
+EdgeCost* CostMatrix::Iterator::operator->() {
+	return &(*cost_matrix_ptr_)(
+		cost_matrix_ptr_->GetActualRowNum(row_num_),
+		cost_matrix_ptr_->GetActualColumnNum(column_num_));
+} */
 
 CostMatrix::Iterator CostMatrix::Iterator::operator++(int) {
 	int current_row_num{row_num_};
@@ -153,24 +156,21 @@ bool CostMatrix::Iterator::operator!=(const CostMatrix::Iterator& other)
 
 void CostMatrix::Iterator::MoveToNextCell() {
 	// check if at end of matrix
-	if (row_num_ == cost_matrix_ptr_->GetNumRows() && column_num_ == 0)
+	if (row_num_ == cost_matrix_ptr_->GetCondensedSize() && column_num_ == 0)
 	{ return; }
 
 	// update row and column number, so column_num_ wraps around
-	column_num_ = (column_num_ + 1) % cost_matrix_ptr_->GetNumColumns();
+	column_num_ = (column_num_ + 1) % cost_matrix_ptr_->GetCondensedSize();
 	if (column_num_ == 0) { ++row_num_; }
 }
 
-*/
-
 vector<int> MakeVectorMapping(const vector<bool>& available) {
-	vector<int> mapping(available.size(), -1);
-	int condensed_index{0};
+	vector<int> mapping;
 
 	// make mapping "condensed matrix row/column" => "actual row/column"
 	for (int cell_num{0}; cell_num < int(available.size()); ++cell_num) {
 		if (!available[cell_num]) { continue; }
-		mapping[cell_num] = condensed_index++;
+		mapping.push_back(cell_num);
 	}
 	return mapping;
 }

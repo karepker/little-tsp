@@ -2,7 +2,6 @@
 
 #include <cassert>
 
-#include <iostream>
 #include <limits>
 #include <stack>
 
@@ -10,10 +9,10 @@
 #include "path.hpp"
 #include "tsp_solver/little/tree_node.hpp"
 
-using std::cout;
-using std::endl;
 using std::numeric_limits;
 using std::stack;
+using std::cerr;
+using std::endl;
 
 const int infinity{numeric_limits<int>::max()};
 
@@ -56,20 +55,19 @@ Path LittleTSPSolver::Solve(const Graph& graph, int upper_bound) const {
 		nodes.pop();
 
 		// two branches:
+		// 2. Include the highest penalty, lowest cost edge
+		TreeNode include{TreeNode::MakeIncludeChild(current)};
+		if (EvaluateNode(include, smallest, upper_bound))
+		{ nodes.push(include); }
+
+
 		// 1. Exclude the highest penalty, lowest cost edge
 		// (if excluding it doesn't create a disconnected graph)
 		if (current.HasExcludeBranch()) {
-			TreeNode exclude{current};
-			exclude.AddExclude(exclude.GetNextEdge());
+			TreeNode exclude{TreeNode::MakeExcludeChild(current)};
 			if (EvaluateNode(exclude, smallest, upper_bound))
 			{ nodes.push(exclude); }
 		}
-
-		// 2. Include the highest penalty, lowest cost edge
-		TreeNode include{current};
-		include.AddInclude(include.GetNextEdge());
-		if (EvaluateNode(include, smallest, upper_bound))
-		{ nodes.push(include); }
 
 	}
 
@@ -85,8 +83,11 @@ bool EvaluateNode(TreeNode& node, TreeNode& smallest, int upper_bound) {
 	// lower bound is strictly less than the upper bound
 	if (node.CalcLBAndNextEdge()) { return node.GetLowerBound() < upper_bound; }
 
-	// otherwise, a complete TSP path was found
+	// otherwise, no more nodes to evaluate on this branch
+	// (complete TSP path, or node with no next edge)
 	// set the solution to smallest if it less than smallest's length
+	// this will work even if the node has no nxt edge, because then the node
+	// must have an infinite lower bound and will not become smallest
 	if (node.GetLowerBound() < smallest.GetLowerBound()) { smallest = node; }
 	return false;
 }

@@ -5,10 +5,10 @@
 #include <utility>
 #include <vector>
 
+#include "graph/edge_cost.hpp"
 #include "matrix.hpp"
 
 struct Edge;
-class EdgeCost;
 class Graph;
 
 // information about the useable matrix
@@ -21,19 +21,16 @@ public:
 	int ReduceMatrix();
 
 	//const EdgeCost operator()(int row_num, int column_num) const;
-	//const CostMatrixInteger& operator()(const Edge& e) const;
+	//const EdgeCost& operator()(const Edge& e) const;
 	EdgeCost operator()(int row_num, int column_num) const;
-	//CostMatrixInteger& operator()(const Edge& e);
+	//EdgeCost& operator()(const Edge& e);
 
-	int GetActualSize() const { return row_mapping_.size(); }
-	int Size() const { return size_; }
+	int GetActualSize() const;
+	int GetCondensedSize() const { return size_; }
+	int GetActualRowNum(int row_num) const { return row_mapping_[row_num]; }
+	int GetActualColumnNum(int column_num) const
+	{ return column_mapping_[column_num]; }
 
-	bool IsRowAvailable(int row_num) const
-	{ return row_mapping_[row_num] >= 0; }
-	bool IsColumnAvailable(int column_num) const
-	{ return column_mapping_[column_num] >= 0; }
-
-	/*
 	template <typename T>
 	class CostVector;
 	// these classes need to be able to share data with each other because they
@@ -51,14 +48,13 @@ public:
 	template <typename T>
 	class CostVector {
 	public:
-		CostVector(CostMatrix* cost_matrix_ptr,
+		CostVector(const CostMatrix* cost_matrix_ptr,
 				const T orientation) : cost_matrix_ptr_{cost_matrix_ptr},
 			orientation_{orientation} {}
 
-		const CostMatrixInteger& operator[](int cell_num) const;
-		CostMatrixInteger& operator[](int cell_num);
+		EdgeCost operator[](int cell_num) const;
 		// GetNumRows and GetNumColumns are equivalent for square cost matrix
-		int Size() const { return cost_matrix_ptr_->Size(); }
+		int Size() const { return cost_matrix_ptr_->GetCondensedSize(); }
 
 		// we need access to the protected interface in cost vector and the
 		// subscripting operation
@@ -67,12 +63,12 @@ public:
 
 		class Iterator {
 		public:
-			explicit Iterator(CostVector* cost_vector_ptr) :
+			explicit Iterator(const CostVector* cost_vector_ptr) :
 				cost_vector_ptr_{cost_vector_ptr}, traversing_cell_index_{0} {}
 			Iterator() : cost_vector_ptr_{nullptr}, traversing_cell_index_{0} {}
 
-			CostMatrixInteger& operator*();
-			CostMatrixInteger* operator->();
+			EdgeCost operator*() const;
+			//EdgeCost* operator->();
 
 			Iterator operator++(int);
 			Iterator& operator++();
@@ -83,19 +79,19 @@ public:
 			friend class CostVector;
 
 		private:
-			Iterator(CostVector* cost_vector_ptr, int cell_num) :
+			Iterator(const CostVector* cost_vector_ptr, int cell_num) :
 				cost_vector_ptr_{cost_vector_ptr},
 				traversing_cell_index_{cell_num} {}
 
-			CostVector* cost_vector_ptr_;
+			const CostVector* cost_vector_ptr_;
 			int traversing_cell_index_;  // changes as iterator moves
 		};
 
-		Iterator begin() { return Iterator{this}; }
-		Iterator end() { return Iterator{this, Size()}; }
+		Iterator begin() const { return Iterator{this}; }
+		Iterator end() const { return Iterator{this, Size()}; }
 
 	private:
-		CostMatrix* cost_matrix_ptr_;
+		const CostMatrix* cost_matrix_ptr_;
 		const T orientation_;  // either Row or Column
 	};
 
@@ -103,8 +99,9 @@ public:
 	public:
 		explicit Column(int column_num) : column_num_{column_num} {}
 
-		int GetRow(int cell_num) const { return cell_num; }
-		int GetColumn(int) const { return column_num_; }
+		int GetRow(int cell_num, const CostMatrix* cost_matrix_ptr) const
+		{ return cost_matrix_ptr->GetActualRowNum(cell_num); }
+		int GetColumn(int, const CostMatrix*) const { return column_num_; }
 
 	private:
 		int column_num_;
@@ -114,23 +111,23 @@ public:
 	public:
 		explicit Row(int row_num) : row_num_{row_num} {}
 
-		int GetColumn(int cell_num) const { return cell_num; }
-		int GetRow(int) const { return row_num_; }
+		int GetColumn(int cell_num, const CostMatrix* cost_matrix_ptr) const
+		{ return cost_matrix_ptr->GetActualColumnNum(cell_num); }
+		int GetRow(int, const CostMatrix*) const { return row_num_; }
 
 	private:
 		int row_num_;
 	};
 
-	// iterator for iterating over all cells in the cost matrix
+	// pseudo-iterator for iterating over all cells in the cost matrix
 	class Iterator {
 	public:
 		Iterator() : cost_matrix_ptr_{nullptr}, row_num_{0}, column_num_{0} {}
-		explicit Iterator(CostMatrix* cost_matrix_ptr) :
+		explicit Iterator(const CostMatrix* cost_matrix_ptr) :
 			cost_matrix_ptr_{cost_matrix_ptr}, row_num_{0}, column_num_{0} {}
 
-		CostMatrixInteger& operator*();
-
-		CostMatrixInteger* operator->();
+		EdgeCost operator*();
+		//EdgeCost* operator->();
 
 		Iterator operator++(int);
 		Iterator& operator++();
@@ -142,25 +139,21 @@ public:
 		friend class CostMatrix;
 
 	private:
-		Iterator(CostMatrix* cost_matrix_ptr, int row_num, int column_num) :
-			cost_matrix_ptr_{cost_matrix_ptr}, row_num_{row_num},
-			column_num_{column_num} {}
+		Iterator(const CostMatrix* cost_matrix_ptr, int row_num,
+				int column_num) : cost_matrix_ptr_{cost_matrix_ptr},
+			row_num_{row_num}, column_num_{column_num} {}
 
 		void MoveToNextCell();
 
-		CostMatrix* cost_matrix_ptr_;
+		const CostMatrix* cost_matrix_ptr_;
 		int row_num_;
 		int column_num_;
 	};
 
-	Iterator begin() { return Iterator{this}; }
-	Iterator end() { return Iterator{this, Size(), 0}; } */
+	Iterator begin() const { return Iterator{this}; }
+	Iterator end() const { return Iterator{this, GetCondensedSize(), 0}; }
 
 private:
-	int GetCondensedRowNum(int row_num) const { return row_mapping_[row_num]; }
-	int GetCondensedColumnNum(int column_num) const
-	{ return column_mapping_[column_num]; }
-
 	const Graph& graph_;
 	const Matrix<int>& infinite_;
 	int size_;
@@ -173,29 +166,32 @@ private:
 
 /*
 template <typename T>
-const CostMatrixInteger& CostMatrix::CostVector<T>::operator[](
+const EdgeCost& CostMatrix::CostVector<T>::operator[](
 		int cell_num) const {
 	return (*cost_matrix_ptr_)(orientation_.GetRow(cell_num),
 		orientation_.GetColumn(cell_num));
 }
+*/
 
 template <typename T>
-CostMatrixInteger& CostMatrix::CostVector<T>::operator[](int cell_num) {
-	return (*cost_matrix_ptr_)(orientation_.GetRow(cell_num),
-			orientation_.GetColumn(cell_num));
+EdgeCost CostMatrix::CostVector<T>::operator[](int cell_num) const {
+	return (*cost_matrix_ptr_)(orientation_.GetRow(cell_num, cost_matrix_ptr_),
+			orientation_.GetColumn(cell_num, cost_matrix_ptr_));
 }
 
 template <typename T>
-CostMatrixInteger& CostMatrix::CostVector<T>::Iterator::operator*() {
+EdgeCost CostMatrix::CostVector<T>::Iterator::operator*() const {
 	assert(cost_vector_ptr_);
 	return (*cost_vector_ptr_)[traversing_cell_index_];
 }
 
+/*
 template <typename T>
-CostMatrixInteger* CostMatrix::CostVector<T>::Iterator::operator->() {
+EdgeCost* CostMatrix::CostVector<T>::Iterator::operator->() {
 	assert(cost_vector_ptr_);
 	return &(*cost_vector_ptr_)[traversing_cell_index_];
 }
+*/
 
 template <typename T>
 typename CostMatrix::CostVector<T>::Iterator
@@ -226,6 +222,5 @@ bool CostMatrix::CostVector<T>::Iterator::operator!=(
 		const CostVector::Iterator& other) const
 { return !(operator==(other)); }
 
-*/
 
 #endif  // TSP_SOLVER_LITTLE_TSP_COST_MATRIX_H

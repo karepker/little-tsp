@@ -16,6 +16,8 @@ class TreeNode {
 public:
 	// some constructors
 	explicit TreeNode(const Graph& costs);
+	static TreeNode MakeIncludeChild(const TreeNode& parent);
+	static TreeNode MakeExcludeChild(const TreeNode& parent);
 
 	// Important methods
 	// add included and excluded vertices
@@ -41,6 +43,10 @@ private:
 	bool HandleBaseCase(const CostMatrix& cost_matrix,
 			const std::vector<CostMatrixZero>& remaining_edges);
 	int CalculateLowerBound() const;
+
+	// once we add an include or an exclude, we don't know if the node has an
+	// exclude branch or what the next edge will be anymore
+	void ResetCalculatedState();
 
 	// the graph from which the tree node gets its weights
 	const Graph* graph_ptr_;

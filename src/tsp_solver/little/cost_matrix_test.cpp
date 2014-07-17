@@ -25,12 +25,10 @@ using std::transform;
 using std::unique_ptr;
 using std::vector;
 
-/*
 template <typename T>
 using CostVector = CostMatrix::CostVector<T>;
 using Row = CostMatrix::Row;
 using Column = CostMatrix::Column;
-*/
 
 using ::testing::Const;
 using ::testing::Return;
@@ -43,12 +41,11 @@ const vector<Edge> exclude1_edges{{0, 0}};
 const vector<Edge> include2{{0, 2}};
 const vector<Edge> exclude2_edges{{0, 0}};
 
-
 const Matrix<EdgeCost> graph_weights{
 	MakeEdgeCosts({6, 2, 4, 4, 5, 3, 8, 9, 7}, 3)};
 
-//template<typename T>
-//static void CompareWithVector(T matrix, vector<int> expected);
+template <typename T>
+static void CompareWithExpected(T& matrix, vector<int> expected);
 
 class CostMatrixTest : public ::testing::Test {
 public:
@@ -91,56 +88,78 @@ CostMatrixTest::CostMatrixTest() {
 }
 
 TEST_F(CostMatrixTest, Size) {
-	EXPECT_EQ(3, matrix1_ptr->Size());
-	EXPECT_EQ(2, matrix2_ptr->Size());
+	EXPECT_EQ(3, matrix1_ptr->GetCondensedSize());
+	EXPECT_EQ(2, matrix2_ptr->GetCondensedSize());
 }
 
-/*
 TEST_F(CostMatrixTest, ReduceMatrix) {
 	// make sure the matrices were reduced correctly
-	CompareWithVector(*matrix1_ptr, {infinity, 0, 2, 0, 2, 0, 0, 2, 0});
-	CompareWithVector(*matrix2_ptr, {0, 0, 0, 0});
+	CompareWithExpected(*matrix1_ptr, {infinity, 0, 2, 0, 2, 0, 0, 2, 0});
+	CompareWithExpected(*matrix2_ptr, {0, 0, 0, 0});
+
+	// matrix that cannot be row reduced
+	const Matrix<EdgeCost> infinite_reduction{MakeEdgeCosts({
+			-1, -1, 129, 86,
+			39, -1, 112, 69,
+			129, 112, -1, -1,
+			86, 69, -1, -1}, 4)};
+	MockGraph irreducible_graph;
+	for (int i{0}; i < infinite_reduction.GetNumRows(); ++i) {
+		for (int j{0}; j < infinite_reduction.GetNumColumns(); ++j) {
+			EXPECT_CALL(Const(irreducible_graph), Predicate(i, j)).
+				WillRepeatedly(ReturnRef(infinite_reduction(i, j)));
+		}
+	}
+	EXPECT_CALL(irreducible_graph, GetNumVertices()).WillRepeatedly(Return(4));
+
+	vector<Edge> infinite_include{{1, 0}, {0, 2}};
+	vector<Edge> infinite_exclude_edges{
+		{0, 0}, {1, 1}, {2, 2}, {3, 3}, {0, 1}, {2, 3}, {3, 2}};
+	Matrix<int> infinite_exclude{4, {
+		1, 1, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 1,
+		0, 0, 1, 1}};
+	CostMatrix cost_matrix{
+		irreducible_graph, infinite_include, infinite_exclude};
+	EXPECT_EQ(infinity, cost_matrix.ReduceMatrix());
 }
 
 TEST_F(CostMatrixTest, GetRow) {
 	// iterate over matrix1 with rows
-	EXPECT_TRUE(matrix1_ptr->IsRowAvailable(0));
-	EXPECT_TRUE(matrix1_ptr->IsRowAvailable(1));
-	EXPECT_TRUE(matrix1_ptr->IsRowAvailable(2));
-
-	CostMatrix::CostVector<Row> row0{matrix1_ptr->GetRow(0)};
-	CostMatrix::CostVector<Row> row1{matrix1_ptr->GetRow(1)};
-	CostMatrix::CostVector<Row> row2{matrix1_ptr->GetRow(2)};
-	CompareWithVector(row0, {infinity, 0, 2});
-	CompareWithVector(row1, {0, 2, 0});
-	CompareWithVector(row2, {0, 2, 0});
+	CostMatrix::CostVector<Row> row0{
+		matrix1_ptr->GetRow(matrix1_ptr->GetActualRowNum(0))};
+	CostMatrix::CostVector<Row> row1{
+		matrix1_ptr->GetRow(matrix1_ptr->GetActualRowNum(1))};
+	CostMatrix::CostVector<Row> row2{
+		matrix1_ptr->GetRow(matrix1_ptr->GetActualRowNum(2))};
+	CompareWithExpected(row0, {infinity, 0, 2});
+	CompareWithExpected(row1, {0, 2, 0});
+	CompareWithExpected(row2, {0, 2, 0});
 
 	auto row2_max_it = max_element(row2.begin(), row2.end());
-	int row2_max{row2_max_it->operator()()};
+	int row2_max{(*row2_max_it)()};
 	EXPECT_EQ(2, row2_max);
 }
 
 TEST_F(CostMatrixTest, GetColumn) {
 	// iterate over matrix2 with columns
-	EXPECT_TRUE(matrix2_ptr->IsColumnAvailable(0));
-	EXPECT_TRUE(matrix2_ptr->IsColumnAvailable(1));
-	EXPECT_FALSE(matrix2_ptr->IsColumnAvailable(2));
-	CostMatrix::CostVector<Column> column0{matrix2_ptr->GetColumn(0)};
-	CostMatrix::CostVector<Column> column1{matrix2_ptr->GetColumn(1)};
-	EXPECT_THROW(matrix2_ptr->GetColumn(2), NotAvailableError);
-	CompareWithVector(column0, {0, 0});
-	CompareWithVector(column1, {0, 0});
+	CostMatrix::CostVector<Column> column0{
+		matrix2_ptr->GetColumn(matrix2_ptr->GetActualColumnNum(0))};
+	CostMatrix::CostVector<Column> column1{
+		matrix2_ptr->GetColumn(matrix2_ptr->GetActualColumnNum(1))};
+	CompareWithExpected(column0, {0, 0});
+	CompareWithExpected(column1, {0, 0});
 
 	auto column1_max_it = max_element(column1.begin(), column1.end());
-	int column1_max{column1_max_it->operator()()};
+	int column1_max{(*column1_max_it)()};
 	EXPECT_EQ(0, column1_max);
 }
 
-template<typename T>
-void TestMatrix(const CostMatrix& matrix, vector<int> expected) {
+template <typename T>
+void CompareWithExpected(T& matrix, vector<int> expected) {
 	vector<int> actual;
 	transform(matrix.begin(), matrix.end(), back_inserter(actual),
 			[](const EdgeCost& cmi) { return cmi(); });
 	EXPECT_EQ(expected, actual);
 }
-*/

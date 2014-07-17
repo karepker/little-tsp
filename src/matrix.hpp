@@ -3,8 +3,8 @@
 
 #include <cassert>
 
-#include <vector>
 #include <type_traits>
+#include <vector>
 
 template <class T>
 class Matrix {
@@ -15,10 +15,10 @@ public:
 	Matrix(int rows, int cols) : rows_{rows}, entries_(rows * cols) {}
 	Matrix(int rows, int cols, T initial_value) : rows_{rows},
 		entries_(rows * cols, initial_value) {}
-	Matrix(int rows, std::vector<T> entries) : rows_{rows}, entries_{entries} {
-		// size of entries must be rows_ * <integer value>
-		assert(entries_.size() % rows == 0);
-	}
+
+	// size of entries must be rows_ * <integer value>
+	Matrix(int rows, std::vector<T> entries) : rows_{rows}, entries_{entries}
+	{ assert(entries_.size() % rows == 0); }
 
 	void SetSize(int rows, int cols) {
 		rows_ = rows;

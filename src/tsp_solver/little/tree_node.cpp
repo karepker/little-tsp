@@ -5,8 +5,8 @@
 #include <algorithm>
 #include <deque>
 #include <iterator>
-#include <utility>
 #include <limits>
+#include <utility>
 
 #include "graph/edge_cost.hpp"
 #include "graph/graph.hpp"
@@ -14,6 +14,8 @@
 #include "path.hpp"
 #include "tsp_solver/little/cost_matrix.hpp"
 #include "util.hpp"
+
+using namespace std::rel_ops;
 
 using std::back_inserter;
 using std::deque;
@@ -51,7 +53,22 @@ TreeNode::TreeNode(const Graph& costs) : graph_ptr_{&costs},
 	{ AddExclude(Edge{diag, diag}); }
 }
 
+TreeNode TreeNode::MakeIncludeChild(const TreeNode& parent) {
+	TreeNode child{parent};
+	child.AddInclude(parent.GetNextEdge());
+	child.ResetCalculatedState();
+	return child;
+}
+
+TreeNode TreeNode::MakeExcludeChild(const TreeNode& parent) {
+	TreeNode child{parent};
+	child.AddExclude(parent.GetNextEdge());
+	child.ResetCalculatedState();
+	return child;
+}
+
 void TreeNode::AddInclude(const Edge& e) {
+	ResetCalculatedState();
 	// find the largest subtour involving the edge to add
 	deque<int> subtour{e.u, e.v};
 	bool found_edge{true};
@@ -132,14 +149,16 @@ bool TreeNode::CalcLBAndNextEdge() {
 	// create a cost matrix from information stored in the tree node, reduce it
 	// use current edges and reduced cost matrix to calculate lower bound
 	CostMatrix cost_matrix{*graph_ptr_, include_, exclude_};
-	lower_bound_ = CalculateLowerBound();
-	lower_bound_ += cost_matrix.ReduceMatrix();
+	lower_bound_ = cost_matrix.ReduceMatrix();
+	if (lower_bound_ == infinity) { return false; }
+	lower_bound_ += CalculateLowerBound();
 
 	// find all the zeros in the matrix and copy them into the zeros vector
 	vector<CostMatrixZero> zeros{FindZerosAndPenalties(cost_matrix)};
 
 	// handle base case in a separate function
-	if (cost_matrix.Size() == 2) { return HandleBaseCase(cost_matrix, zeros); }
+	if (cost_matrix.GetCondensedSize() == 2)
+	{ return HandleBaseCase(cost_matrix, zeros); }
 
 	// for any other case, set the next edge as the zero with the highest 
 	// penalty and allow an exclude branch if the penalty is not infinite
@@ -166,7 +185,6 @@ bool TreeNode::HandleBaseCase(const CostMatrix& cost_matrix,
 	// recalculate LB, i.e. the length of the TSP tour
 	lower_bound_ = CalculateLowerBound();
 
-	has_exclude_branch_ = false;
 	return false;  // no next edge, we have a complete tour
 }
 
@@ -182,25 +200,19 @@ vector<CostMatrixZero> FindZerosAndPenalties(const CostMatrix& cost_matrix) {
 	vector<Edge> zero_edges;
 
 	// find zeros and store two smallest elements
-	for (int i{0}; i < cost_matrix.GetActualSize(); ++i) {
-		if (!cost_matrix.IsRowAvailable(i)) { continue; }
-		for (int j{0}; j < cost_matrix.GetActualSize(); ++j) {
-			if (!cost_matrix.IsColumnAvailable(j)) { continue; }
-			EdgeCost current{cost_matrix(i, j)};
-			const Edge& current_edge{current.GetEdge()};
-			assert(i == current_edge.u && j == current_edge.v);
-			// find zeros
-			if (current() == 0) { zero_edges.push_back(current_edge); }
-			// look for two smallest elements
-			UpdateTwoSmallest(current, two_smallest_row[current_edge.u]);
-			UpdateTwoSmallest(current, two_smallest_column[current_edge.v]);
-		}
+	for (const EdgeCost& current : cost_matrix) {
+		const Edge& current_edge{current.GetEdge()};
+		// find zeros
+		if (current() == 0) { zero_edges.push_back(current_edge); }
+		// look for two smallest elements
+		UpdateTwoSmallest(current, two_smallest_row[current_edge.u]);
+		UpdateTwoSmallest(current, two_smallest_column[current_edge.v]);
 	}
 
 	// 3 cases
 	// 1. base case: 2 edges left to add. 
 	// Logic is sufficiently different that it belongs in its own function 
-	if (cost_matrix.Size() == 2) {
+	if (cost_matrix.GetCondensedSize() == 2) {
 		return FindBaseCaseZerosAndPenalties(
 				zero_edges, two_smallest_row, two_smallest_column);
 	}
@@ -219,7 +231,7 @@ vector<CostMatrixZero> FindZerosAndPenalties(const CostMatrix& cost_matrix) {
 		// 2. case when excluding the node creates a disconnected graph
 		// we must choose this edge and cannot branch, so return vector with
 		// single element that is this zero
-		if (column_penalty.IsInfinite() != row_penalty.IsInfinite())
+		if (column_penalty.IsInfinite() || row_penalty.IsInfinite())
 		{ return { CostMatrixZero{edge, infinity} }; }
 
 		// 3. normal case, there is both an include and exclude branch
@@ -255,6 +267,11 @@ vector<CostMatrixZero> FindBaseCaseZerosAndPenalties(
 	return cost_matrix_zeros;
 }
 
+void TreeNode::ResetCalculatedState() {
+	has_exclude_branch_ = false;
+	next_edge_ = Edge{-1, -1};
+}
+
 void UpdateTwoSmallest(const EdgeCost& current,
 		pair<EdgeCost, EdgeCost>& two_smallest) {
 	if (current < two_smallest.first) {
@@ -268,3 +285,4 @@ EdgeCost GetPenalty(const Edge& edge, const cmi_pair_t& penalties) {
 	if (penalties.first.GetEdge() != edge) { return penalties.first; }
 	return penalties.second;
 }
+
