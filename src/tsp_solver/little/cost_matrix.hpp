@@ -164,15 +164,6 @@ private:
 	std::vector<int> column_reductions_;
 };
 
-/*
-template <typename T>
-const EdgeCost& CostMatrix::CostVector<T>::operator[](
-		int cell_num) const {
-	return (*cost_matrix_ptr_)(orientation_.GetRow(cell_num),
-		orientation_.GetColumn(cell_num));
-}
-*/
-
 template <typename T>
 EdgeCost CostMatrix::CostVector<T>::operator[](int cell_num) const {
 	return (*cost_matrix_ptr_)(orientation_.GetRow(cell_num, cost_matrix_ptr_),
@@ -184,14 +175,6 @@ EdgeCost CostMatrix::CostVector<T>::Iterator::operator*() const {
 	assert(cost_vector_ptr_);
 	return (*cost_vector_ptr_)[traversing_cell_index_];
 }
-
-/*
-template <typename T>
-EdgeCost* CostMatrix::CostVector<T>::Iterator::operator->() {
-	assert(cost_vector_ptr_);
-	return &(*cost_vector_ptr_)[traversing_cell_index_];
-}
-*/
 
 template <typename T>
 typename CostMatrix::CostVector<T>::Iterator

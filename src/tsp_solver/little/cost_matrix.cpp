@@ -86,18 +86,6 @@ int CostMatrix::ReduceMatrix() {
 	return decremented;
 }
 
-
-/*
-const EdgeCost& CostMatrix::operator()(int row_num,
-		int column_num) const { return operator()(Edge{row_num, column_num}); }
-const EdgeCost CostMatrix::operator()(
-		int row_num, int column_num) const {
-	if (infinite_(row_num, column_num)
-	{ return EdgeCost::Infinite(Edge{row_num, column_num}); }
-	return cost_matrix_(row_num, column_num) - row_reductions_[row_num] -
-		column_reductions_[column_num];
-}
-*/
 int CostMatrix::GetActualSize() const { return graph_.GetNumVertices(); }
 
 EdgeCost CostMatrix::operator()(int row_num, int column_num) const {
@@ -106,12 +94,6 @@ EdgeCost CostMatrix::operator()(int row_num, int column_num) const {
 	return graph_(row_num, column_num) - row_reductions_[row_num] -
 		column_reductions_[column_num];
 }
-/*
-EdgeCost& CostMatrix::operator()(const Edge& e) {
-	return cost_matrix_(e.u, e.v) - row_reductions_[e.u] -
-		column_reductions_[e.v];
-} */
-
 
 CostVector<Row> CostMatrix::GetRow(int row_num) {
 	return CostVector<Row>{this, Row{row_num}};
@@ -126,13 +108,6 @@ EdgeCost CostMatrix::Iterator::operator*() {
 			cost_matrix_ptr_->GetActualRowNum(row_num_),
 			cost_matrix_ptr_->GetActualColumnNum(column_num_));
 }
-
-/*
-EdgeCost* CostMatrix::Iterator::operator->() {
-	return &(*cost_matrix_ptr_)(
-		cost_matrix_ptr_->GetActualRowNum(row_num_),
-		cost_matrix_ptr_->GetActualColumnNum(column_num_));
-} */
 
 CostMatrix::Iterator CostMatrix::Iterator::operator++(int) {
 	int current_row_num{row_num_};

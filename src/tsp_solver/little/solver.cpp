@@ -55,12 +55,6 @@ Path LittleTSPSolver::Solve(const Graph& graph, int upper_bound) const {
 		nodes.pop();
 
 		// two branches:
-		// 2. Include the highest penalty, lowest cost edge
-		TreeNode include{TreeNode::MakeIncludeChild(current)};
-		if (EvaluateNode(include, smallest, upper_bound))
-		{ nodes.push(include); }
-
-
 		// 1. Exclude the highest penalty, lowest cost edge
 		// (if excluding it doesn't create a disconnected graph)
 		if (current.HasExcludeBranch()) {
@@ -69,6 +63,10 @@ Path LittleTSPSolver::Solve(const Graph& graph, int upper_bound) const {
 			{ nodes.push(exclude); }
 		}
 
+		// 2. Include the highest penalty, lowest cost edge
+		TreeNode include{TreeNode::MakeIncludeChild(current)};
+		if (EvaluateNode(include, smallest, upper_bound))
+		{ nodes.push(include); }
 	}
 
 	// return the shortest path
