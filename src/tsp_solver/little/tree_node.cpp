@@ -4,10 +4,11 @@
 
 #include <algorithm>
 #include <deque>
-#include <iterator>
+#include <iostream>
 #include <limits>
 #include <utility>
 
+#include "graph/edge.hpp"
 #include "graph/edge_cost.hpp"
 #include "graph/graph.hpp"
 #include "matrix.hpp"
@@ -17,9 +18,7 @@
 
 using namespace std::rel_ops;
 
-using std::back_inserter;
 using std::deque;
-using std::exception;
 using std::for_each;
 using std::pair;
 using std::make_pair;
@@ -29,8 +28,8 @@ using std::numeric_limits;
 using std::ostream;
 using std::vector;
 
-using cmi_pair_t = std::pair<EdgeCost, EdgeCost>;
-using two_smallest_t = std::vector<cmi_pair_t>;
+using cmi_pair_t = pair<EdgeCost, EdgeCost>;
+using two_smallest_t = vector<cmi_pair_t>;
 
 const int infinity{numeric_limits<int>::max()};
 
@@ -131,6 +130,11 @@ int TreeNode::CalculateLowerBound() const {
 			{ return current_lb + (*graph_ptr_)(e)(); });
 }
 
+void TreeNode::ResetCalculatedState() {
+	has_exclude_branch_ = false;
+	next_edge_ = Edge{-1, -1};
+}
+
 ostream& operator<<(ostream& os, const TreeNode& p) {
 	os << "{ ";
 	for (const Edge& e : p.include_) { os << "(" << e.u << " " << e.v << ") "; }
@@ -188,6 +192,10 @@ bool TreeNode::HandleBaseCase(const CostMatrix& cost_matrix,
 	return false;  // no next edge, we have a complete tour
 }
 
+// Finds the zero with the highest "penalty" for exclusion.
+// The penalty of any zero is defined as the amount the lower bound would
+// increase if the zero were excluded from the TSP path
+// Note: only returns more than one zero in the base case
 vector<CostMatrixZero> FindZerosAndPenalties(const CostMatrix& cost_matrix) {
 	// hold the two smallest elements in each row and column
 	cmi_pair_t infinite_cmis{make_pair(EdgeCost::Infinite(),
@@ -242,6 +250,8 @@ vector<CostMatrixZero> FindZerosAndPenalties(const CostMatrix& cost_matrix) {
 	return cost_matrix_zeros;
 }
 
+// Find all the zeros and their penalties in the base case.
+// They must have a zero or infinite penalty
 vector<CostMatrixZero> FindBaseCaseZerosAndPenalties(
 		const vector<Edge>& zero_edges,
 		const two_smallest_t& two_smallest_row,
@@ -267,11 +277,8 @@ vector<CostMatrixZero> FindBaseCaseZerosAndPenalties(
 	return cost_matrix_zeros;
 }
 
-void TreeNode::ResetCalculatedState() {
-	has_exclude_branch_ = false;
-	next_edge_ = Edge{-1, -1};
-}
-
+// Given the cost of the current edge, check if it is one of the two smallest
+// and update the two smallest accordingly.
 void UpdateTwoSmallest(const EdgeCost& current,
 		pair<EdgeCost, EdgeCost>& two_smallest) {
 	if (current < two_smallest.first) {
@@ -281,6 +288,8 @@ void UpdateTwoSmallest(const EdgeCost& current,
 	{ two_smallest.second = current; }
 }
 
+// Calculates the penalty for an edge by returning the difference between it and
+// the next smallest edge in the row as stored in penalties.
 EdgeCost GetPenalty(const Edge& edge, const cmi_pair_t& penalties) {
 	if (penalties.first.GetEdge() != edge) { return penalties.first; }
 	return penalties.second;

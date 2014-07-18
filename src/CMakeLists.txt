@@ -1,5 +1,5 @@
 set(SRCS
-	edge.cpp
+	graph/edge.cpp
 	graph/edge_cost.cpp
 	graph/factory.cpp
 	graph/graph.cpp

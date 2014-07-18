@@ -1,6 +1,7 @@
 #ifndef TSP_SOLVER_LITTLE_TSP_COST_MATRIX_H
 #define TSP_SOLVER_LITTLE_TSP_COST_MATRIX_H
 
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -11,56 +12,64 @@
 struct Edge;
 class Graph;
 
-// information about the useable matrix
-// temporary structure that is used to help build a TreeNode
+// Pseudo-container that serves as a lens for the graph allowing handling
+// computation and iteration so TreeNode doesn't have to. "Pseudo-container"
+// because it does not actually store elements, and computes them on the fly
+// using the elements in the graph.
+
+// CostMatrix keeps track of a condensed index system built on construction, 
+// which simplifies iteration by guaranteeing condensed indices map only to
+// available rows and columns.
 class CostMatrix {
 public:
 	CostMatrix(const Graph& graph, const std::vector<Edge>& include,
 			const Matrix<int>& exclude);
 
+	// Reduces the matrix by subtracting the smallest value in each row and 
+	// column such that for all rows and columns there exists an element == 0.
+	// Return the total value that was deducted from the matrix.
 	int ReduceMatrix();
 
-	//const EdgeCost operator()(int row_num, int column_num) const;
-	//const EdgeCost& operator()(const Edge& e) const;
+	// Calculate the value at the given row and column based on the reduction
+	// and whether the cell has been marked infinite.
 	EdgeCost operator()(int row_num, int column_num) const;
-	//EdgeCost& operator()(const Edge& e);
 
+	// Get the full size of the cost matrix (= number of vertices in the graph).
 	int GetActualSize() const;
-	int GetCondensedSize() const { return size_; }
+	// Get the size of the matrix using condensed indexing.
+	int GetCondensedSize() const { return condensed_size_; }
+
+	// Map from condensed row => actual row number.
 	int GetActualRowNum(int row_num) const { return row_mapping_[row_num]; }
+	// Map from condensed column => actual column number.
 	int GetActualColumnNum(int column_num) const
 	{ return column_mapping_[column_num]; }
 
-	template <typename T>
-	class CostVector;
-	// these classes need to be able to share data with each other because they
-	// are very intimately related
-	class Column;
 	class Row;
-	friend class CostVector<Column>;
-	friend class CostVector<Row>;
+	class Column;
 
-	CostVector<Row> GetRow(int row_num);
-	CostVector<Column> GetColumn(int column_num);
-
-	// encapsulation of cost information about either a single row or a column
-	// defines iterator which allows easier traversal and more use of STL
+	// Encapsulation of cost information about either a single row or a column.
+	// Uses templates instead of OOP for increased speed.
 	template <typename T>
 	class CostVector {
 	public:
+		static_assert(std::is_same<T, Row>::value ||
+				std::is_same<T, Column>::value,
+				"Must construct CostVector with either a Row or a Column");
+
 		CostVector(const CostMatrix* cost_matrix_ptr,
 				const T orientation) : cost_matrix_ptr_{cost_matrix_ptr},
 			orientation_{orientation} {}
 
+		// Gets the EdgeCost from the appropriate location in the cost matrix.
 		EdgeCost operator[](int cell_num) const;
 		// GetNumRows and GetNumColumns are equivalent for square cost matrix
 		int Size() const { return cost_matrix_ptr_->GetCondensedSize(); }
 
-		// we need access to the protected interface in cost vector and the
-		// subscripting operation
-		class Iterator;
-		friend class Iterator;
-
+		// Pseudo-iterator allows easier iteration over vector and more use of 
+		// STL. Note: "pseudo" because it does not implement operator->()
+		// because CostMatrix is a pseudo-container and computes elements on 
+		// the fly.
 		class Iterator {
 		public:
 			explicit Iterator(const CostVector* cost_vector_ptr) :
@@ -68,7 +77,6 @@ public:
 			Iterator() : cost_vector_ptr_{nullptr}, traversing_cell_index_{0} {}
 
 			EdgeCost operator*() const;
-			//EdgeCost* operator->();
 
 			Iterator operator++(int);
 			Iterator& operator++();
@@ -119,7 +127,14 @@ public:
 		int row_num_;
 	};
 
-	// pseudo-iterator for iterating over all cells in the cost matrix
+	// Helper functions that get cost vectors representing the given row or
+	// column.
+	CostVector<Row> GetRow(int row_num);
+	CostVector<Column> GetColumn(int column_num);
+
+	// Pseudo-iterator allows easier iteration over entire matrix and more use 
+	// of STL. Note: "pseudo" because it does not implement operator->() because 
+	// CostMatrix is a pseudo-container and computes elements on the fly.
 	class Iterator {
 	public:
 		Iterator() : cost_matrix_ptr_{nullptr}, row_num_{0}, column_num_{0} {}
@@ -154,12 +169,19 @@ public:
 	Iterator end() const { return Iterator{this, GetCondensedSize(), 0}; }
 
 private:
-	const Graph& graph_;
-	const Matrix<int>& infinite_;
-	int size_;
+	// allow CostVector to call GetCondensedSize()
+	friend class CostVector<Row>;
+	friend class CostVector<Column>;
+
+		const Graph& graph_;
+	const Matrix<int>& infinite_;  // reference to TreeNode's exclude_ matrix
+	int condensed_size_;
+
 	// map actual cell => condensed cell
 	std::vector<int> row_mapping_;
 	std::vector<int> column_mapping_;
+
+	// hold the reductions for rows and columns
 	std::vector<int> row_reductions_;
 	std::vector<int> column_reductions_;
 };

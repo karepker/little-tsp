@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "edge.hpp"
+#include "graph/edge.hpp"
 #include "graph/edge_cost.hpp"
 #include "graph/graph.hpp"
 #include "matrix.hpp"
@@ -47,7 +47,7 @@ CostMatrix::CostMatrix(const Graph& graph, const vector<Edge>& include,
 	// row/column numbers
 	row_mapping_ = MakeVectorMapping(row_available);
 	column_mapping_ = MakeVectorMapping(column_available);
-	size_ = available_rows;
+	condensed_size_ = available_rows;
 
 	row_reductions_ = vector<int>(GetActualSize(), 0);
 	column_reductions_ = vector<int>(GetActualSize(), 0);
@@ -139,6 +139,9 @@ void CostMatrix::Iterator::MoveToNextCell() {
 	if (column_num_ == 0) { ++row_num_; }
 }
 
+// Map condensed index => actual index such that condensed indices always point
+// to rows and columns that are available. This is useful for iteration in
+// CostVector.
 vector<int> MakeVectorMapping(const vector<bool>& available) {
 	vector<int> mapping;
 

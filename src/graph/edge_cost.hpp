@@ -1,8 +1,8 @@
 #ifndef GRAPH_EDGE_COST_H
 #define GRAPH_EDGE_COST_H
 
+#include "graph/edge.hpp"
 #include "util.hpp"
-#include "edge.hpp"
 
 /** 
  * class used to store integers and their states in a cost matrix in Little's

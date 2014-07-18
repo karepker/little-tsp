@@ -6,9 +6,12 @@
 #include <type_traits>
 #include <vector>
 
-template <class T>
+template <typename T>
 class Matrix {
 public:
+	static_assert(!std::is_same<T, bool>::value, "Cannot use boolean with this "
+			"matrix class.");
+
 	Matrix() : rows_{0} {}
 	Matrix(int square_size) : rows_{square_size},
 		entries_(square_size * square_size) {}
@@ -32,11 +35,6 @@ public:
 	// operators for getting costs
 	T& operator()(int row, int col) { return entries_[row * rows_ + col]; }
 	const T& operator()(int row, int col) const
-	{ return entries_[row * rows_ + col]; }
-
-	void SetEntry(int row, int col, T value)
-	{ entries_[row * rows_ + col] = value; }
-	T GetEntry(int row, int col) const
 	{ return entries_[row * rows_ + col]; }
 
 	int GetNumRows() const { return rows_; }

@@ -3,7 +3,7 @@
 
 enum programmode_t { NOT_SET, OPTTSP, NAIVETSP };
 
-programmode_t parseArgs(int argc, char* argv[]);
-programmode_t checkMode(const char* optarg);
-	
+programmode_t ParseArgs(int argc, char* argv[]);
+programmode_t CheckMode(const char* optarg);
+
 #endif  // INTERACTION_H

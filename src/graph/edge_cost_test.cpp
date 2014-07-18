@@ -1,6 +1,6 @@
 #include "graph/edge_cost.hpp"
 
-#include "edge.hpp"
+#include "graph/edge.hpp"
 
 #include "gtest/gtest.h"
 

@@ -2,7 +2,7 @@
 
 #include <limits>
 
-#include "edge.hpp"
+#include "graph/edge.hpp"
 #include "util.hpp"
 
 using std::numeric_limits;

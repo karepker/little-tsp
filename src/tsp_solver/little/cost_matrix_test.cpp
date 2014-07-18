@@ -8,11 +8,11 @@
 #include <memory>
 #include <vector>
 
+#include "graph/edge.hpp"
 #include "graph/edge_cost.hpp"
-#include "edge.hpp"
 #include "graph/mock.hpp"
-#include "util.hpp"
 #include "matrix.hpp"
+#include "util.hpp"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -87,7 +87,7 @@ CostMatrixTest::CostMatrixTest() {
 	EXPECT_EQ(13, matrix2_ptr->ReduceMatrix());
 }
 
-TEST_F(CostMatrixTest, Size) {
+TEST_F(CostMatrixTest, GetCondensedSize) {
 	EXPECT_EQ(3, matrix1_ptr->GetCondensedSize());
 	EXPECT_EQ(2, matrix2_ptr->GetCondensedSize());
 }

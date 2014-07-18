@@ -21,16 +21,10 @@ using std::unique_ptr;
 int main(int argc, char* argv[]) {
 	// get mode
 	programmode_t mode;
-	try { mode = parseArgs(argc, argv); }
+	try { mode = ParseArgs(argc, argv); }
 	catch (Error& e) {
 		cout << e.what() << endl;
 		return 1;
-	} catch (ImplementationError& ie) {
-		cout << "Implementation Error: " << ie.what() << endl;
-		return 2;
-	} catch (...) {
-		cout << "Unknown Error!" << endl;
-		return 3;
 	}
 
 	unique_ptr<Graph> graph{CreateGraph("manhattan", cin)};
@@ -42,8 +36,16 @@ int main(int argc, char* argv[]) {
 	// find the optimal TSP using the naive algorithm
 	else { tsp_solver = CreateTSPSolver("naive"); }
 
-	Path p{tsp_solver->Solve(*graph)};
-	cout << p;
+	// solve the graph
+	try {
+		cout << tsp_solver->Solve(*graph) << endl;
+	} catch (ImplementationError& ie) {
+		cout << "Implementation Error: " << ie.what() << endl;
+		return 2;
+	} catch (...) {
+		cout << "Unknown Error!" << endl;
+		return 3;
+	}
 
 	return 0;
 }

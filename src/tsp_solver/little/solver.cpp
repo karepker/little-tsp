@@ -11,8 +11,6 @@
 
 using std::numeric_limits;
 using std::stack;
-using std::cerr;
-using std::endl;
 
 const int infinity{numeric_limits<int>::max()};
 
@@ -30,7 +28,7 @@ Path LittleTSPSolver::Solve(const Graph& graph, int upper_bound) const {
 	// case: 1 vertex
 	else if (graph.GetNumVertices() == 1) {
 		Path one;
-		one.vertices = { 0 };
+		one.vertices = {0};
 		return one;
 	}
 
@@ -64,6 +62,8 @@ Path LittleTSPSolver::Solve(const Graph& graph, int upper_bound) const {
 		}
 
 		// 2. Include the highest penalty, lowest cost edge
+		// adding this node on second causes the algorithm to branch to the
+		// right before left (as suggested in the original paper)
 		TreeNode include{TreeNode::MakeIncludeChild(current)};
 		if (EvaluateNode(include, smallest, upper_bound))
 		{ nodes.push(include); }

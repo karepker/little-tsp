@@ -1,8 +1,6 @@
 #include "interaction.hpp"
 
 #include <getopt.h>
-#include <cstdio>
-#include <cstdlib>
 #include <cstring>
 
 #include <iostream>
@@ -14,37 +12,26 @@
 using std::cout;
 using std::string;
 using std::endl;
-using std::ostringstream;
 using std::ifstream;
 
 const unsigned int NUM_MODES{NAIVETSP + 1};
 const char* MODES[NUM_MODES] = { "OPTTSP", "NAIVETSP" };
 const programmode_t DEFAULT_MODE{OPTTSP};
 
-programmode_t checkMode(const char* optarg)
-{
-	for (unsigned int i = 0; i < NUM_MODES; ++i)
-	{
-		if (strcmp(optarg, MODES[i]) == 0)
-		{
+programmode_t CheckMode(const char* optarg) {
+	for (unsigned int i = 0; i < NUM_MODES; ++i) {
+		if (strcmp(optarg, MODES[i]) == 0) {
 			// the optarg is one of the allowed algorithms
 			return (programmode_t) (i + 1);
 		}
 	}
-
-	ostringstream message;
-	message << "Mode did not match one of the specified modes. " <<
-		"Given \"" << optarg << "\"" << endl;
-	throw Error{message.str().c_str()};
+	throw Error{"Mode did not match one of the specified modes!"};
 }
 
-programmode_t parseArgs(int argc, char* argv[])
-{
+programmode_t ParseArgs(int argc, char* argv[]) {
 	programmode_t mode{NOT_SET};
-	int c;
 	string line;
 	ifstream help{"help.txt", ifstream::in};
-	ostringstream message;
 	while (true) {
 		static struct option longOptions[] =
 		{
@@ -53,36 +40,35 @@ programmode_t parseArgs(int argc, char* argv[])
 			{0, 0, 0, 0} // keeps getopt_long from segfaulting on abbreviated long options
 		};
 		int optionIndex{0};
-		c = getopt_long(argc, argv, "hm:", longOptions, &optionIndex);
-		
+		int c{getopt_long(argc, argv, "hm:", longOptions, &optionIndex)};
+
 		// detect the end of the options
 		if (c == -1) { break; }
 
 		switch(c) {
 			case '0':
 				if (longOptions[optionIndex].flag != 0) { break; }
-				printf("option %s", longOptions[optionIndex].name);
-				if (optarg) { printf(" with arg %s", optarg); }
-				printf("\n");
+				cout << "option " << longOptions[optionIndex].name;
+				if (optarg) { cout << " with arg " << optarg; }
+				cout << endl;
 				break;
 
 			case 'h':
 				while (getline(help, line)) { cout << line << endl; }
 				exit(0);
-				break; 
+				break;
 
 			case 'm':
-				mode = checkMode(optarg);
+				mode = CheckMode(optarg);
 				break;
 
 			case '?':
 				// error message already printed
-				message << "No argument received" << endl;
-				throw Error{message.str().c_str()};
+				throw Error{"No argument received!"};
 				break;
 
 			default:
-				abort();
+				throw Error{"Weird getopt issues."};
 		}
 	}
 

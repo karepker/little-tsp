@@ -5,7 +5,7 @@
 #include <sstream>
 #include <vector>
 
-#include "edge.hpp"
+#include "graph/edge.hpp"
 #include "graph/edge_cost.hpp"
 #include "util.hpp"
 
