@@ -4,7 +4,9 @@ project (littletsp)
 # set some locations
 set(SOURCE_DIR "${CMAKE_SOURCE_DIR}/src")
 set(UNITTEST_DIR "${SOURCE_DIR}/test")
-set(GMOCK_ROOT "$ENV{HOME}/links/thirdparty/gmock-1.7.0")
+set(GMOCK_ROOT "$ENV{HOME}/links/third_party/gmock-1.7.0")
+
+find_package(gflags REQUIRED)
 
 # set compilation variables
 set(CXXFLAGS "-Wall -Werror -std=c++11")
