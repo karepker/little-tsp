@@ -22,7 +22,7 @@ Dependencies:
 
 After cloning the repository into a local directory, `cd` into that directory and run `./configure`, then `cd` into `build/` and run `make`. To run individual cases of the program manually, run `./build/src/littletsp < input.txt` from the top level of the directory where `input.txt` is the path to a valid input file as described below.
 
-This program also provides a brute force algorithm for solving the TSP that conducts a simple depth first search and returns the minimum path (provide `--solver=naive` on the command line). A heuristic-based approach is available too (--`solver=fast`). Also, typing `littletsp --help` will print a help message displaying options for running.
+This program also provides a brute force algorithm for solving the TSP that conducts a simple depth first search and returns the minimum path (provide `--solver=naive` on the command line). A heuristic-based approach is available too (`--solver=fast`). Also, typing `littletsp --help` will print a help message displaying options for running.
 
 Finally, running the demo script (`python3 test/demo.py`) will provide a demonstration of Little's algorithm's speedup vs the naive implementation. See options for this script by typing `python3 test/demo.py --help`.
 
@@ -33,10 +33,15 @@ To build the unit tests, download Google Mock anywhere on your system. Then, ope
 The input file format is as follows. Line 1 contains the size `N` of the map. The map is considered an `NxN` square. The next line contains the number `M` of vertices. The next `M` lines contain the coordinate of each vertex `i` in the format `x y` where `x` is the x-coordinate of `i`, and `y` is the y-coordinate of `i`. There may be any number of empty lines at the end of the file. For example:
 
 100
+
 4
+
 1 29
+
 2 82
+
 12 4
+
 3 76
 
 is a valid input file. The vertex with coordinates with coordinates `1 29` would be considered vertex 0. Input must be redirected to standard input `std::cin`. See the "Instructions to configure and run" for an example of how to run.
@@ -48,6 +53,7 @@ The graph is interpreted as a [complete graph](http://en.wikipedia.org/wiki/Comp
 The shortest path found printed to standard output (`std::cout`) in the following format. Line 1 contains the total length of the cycle found. Line 2 contains each vertex `i` in the order that they must be visited in order to find the shortest cycle. This output always starts at vertex 0, and is assumed to finish at vertex 0 (though the final 0 is not printed). For example:
 
 178
+
 0 1 3 2
 
 would be the output for the input file given above.
