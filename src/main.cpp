@@ -35,9 +35,18 @@ const bool solver_validated{gflags::RegisterFlagValidator(
 
 int main(int argc, char* argv[]) {
 	// parse and validate flags
+	gflags::SetUsageMessage(
+			"Kar Epker's TSP Solver and implementation of Little's algorithm.\n"
+			"Usage:\n"
+			"\t--graph\t\t\tSet the type of graph to use (Default: manhattan, "
+			"options: manhattan)\n"
+			"\t--solver\t\tSet the type of solver to use (Default: little, "
+			"options: little, naive, fast)\n"
+			"\n"
+			"Example:\n"
+			"\tlittletsp --graph=manhattan --solver=naive < input_graph.txt\n"
+			"\tlittletsp --graph manhattan --solver little < input_graph.txt\n");
 	gflags::ParseCommandLineFlags(&argc, &argv, true);
-	if (!graph_validated || !solver_validated)
-	{ cerr << "Incorrect graph or solver flag given!" << endl; }
 
 	unique_ptr<Graph> graph{CreateGraph(FLAGS_graph, cin)};
 	unique_ptr<TSPSolver> tsp_solver{CreateTSPSolver(FLAGS_solver)};
@@ -56,8 +65,8 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-bool ValidateGraph(const char* flag_name, const string& value)
+bool ValidateGraph(const char*, const string& value)
 { return IsValidGraphType(value); }
 
-bool ValidateSolver(const char* flag_name, const string& value)
+bool ValidateSolver(const char*, const string& value)
 { return IsValidTSPSolverType(value); }
