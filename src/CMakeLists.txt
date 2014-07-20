@@ -4,7 +4,6 @@ set(SRCS
 	graph/factory.cpp
 	graph/graph.cpp
 	graph/manhattan.cpp
-	interaction.cpp
 	path.cpp
 	tsp_solver/factory.cpp
 	tsp_solver/fast_tsp_solver.cpp

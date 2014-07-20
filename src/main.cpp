@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Kar Epker's Implementation of Little et. al. TSP Algorithm
+// Kar Epker's TSP Solver
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <iostream>
@@ -8,7 +8,6 @@
 
 #include "graph/factory.hpp"
 #include "graph/graph.hpp"
-#include "interaction.hpp"
 #include "path.hpp"
 #include "tsp_solver/factory.hpp"
 #include "tsp_solver/tsp_solver.hpp"
