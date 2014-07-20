@@ -1,9 +1,10 @@
-/*
 #include "graph/mock.hpp"
 
 #include <cassert>
 
-#include "edge.hpp"
+#include <vector>
+
+#include "graph/edge.hpp"
 #include "graph/edge_cost.hpp"
 #include "matrix.hpp"
 
@@ -26,5 +27,3 @@ Matrix<EdgeCost> MakeEdgeCosts(const vector<int>& weights, int size) {
 	// return a matrix
 	return Matrix<EdgeCost>{size, costs};
 }
-
-*/

@@ -7,6 +7,8 @@
 
 class Graph;
 
+bool IsValidGraphType(const std::string& type);
+
 // construct a graph from input, by default, input assumed to be cin
 std::unique_ptr<Graph> CreateGraph(const std::string& type,
 		std::istream& input);

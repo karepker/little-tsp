@@ -3,6 +3,7 @@
 #include <limits>
 #include <vector>
 
+#include "graph/edge_cost.hpp"
 #include "graph/graph.hpp"
 #include "path.hpp"
 
@@ -43,7 +44,7 @@ Path SolveHelper(const Graph& graph, Path soFar, vector<bool> visited) {
 
 			// update add to contain the new vertex as part of the path
 			add.vertices.push_back(i);
-			add.length += graph(i, add.vertices[add.vertices.size() - 2]);
+			add.length += graph(i, add.vertices[add.vertices.size() - 2])();
 
 			// update the visited bitvector
 			vector<bool> nextVisited{visited};
@@ -60,7 +61,7 @@ Path SolveHelper(const Graph& graph, Path soFar, vector<bool> visited) {
 
 	// base case: level reached where all vertices are already part of the path
 	if (!openVertex) {
-		soFar.length += graph(soFar.vertices[soFar.vertices.size() - 1], 0);
+		soFar.length += graph(soFar.vertices[soFar.vertices.size() - 1], 0)();
 		return soFar;
 	}
 

@@ -4,6 +4,7 @@
 #include <algorithm>
 
 #include "graph/graph.hpp"
+#include "graph/edge_cost.hpp"
 #include "path.hpp"
 
 using std::vector;
@@ -40,7 +41,7 @@ Path FastTSPSolver::Solve(const Graph& graph) const {
 	// set all the distances 
 	for (int i = 1; i < graph.GetNumVertices(); ++i)
 	{
-		t.distances[i] = graph(start, i);
+		t.distances[i] = graph(start, i)();
 		remaining.insert(i);
 	}
 
@@ -67,18 +68,19 @@ Path FastTSPSolver::Solve(const Graph& graph) const {
 		int index1 = 0;
 		int index2 = 1;
 		int oldDistance = graph(salespath.vertices[index1],
-			salespath.vertices[index2]);
+			salespath.vertices[index2])();
 		int newDistance = graph(salespath.vertices[index1],
-			minIndex) + graph(salespath.vertices[index2], minIndex);
+			minIndex)() + graph(salespath.vertices[index2], minIndex)();
 		int minCost = newDistance - oldDistance;
 
 		// find the two vertices that has the smallest cost of insertion
-		for (int i = 1; i < int(salespath.vertices.size()) - 1; ++i) {
+		for (int i = 1; i < int(salespath.vertices.size()) - 1; ++i)
+		{
 			int oldDist = graph(salespath.vertices[i],
-				salespath.vertices[i + 1]);
+				salespath.vertices[i + 1])();
 			int newDist = graph(salespath.vertices[i],
-				minIndex) + graph(salespath.vertices[i + 1],
-				minIndex);
+				minIndex)() + graph(salespath.vertices[i + 1],
+				minIndex)();
 			int cost = newDist - oldDist;
 			if (cost < minCost)
 			{
@@ -95,7 +97,7 @@ Path FastTSPSolver::Solve(const Graph& graph) const {
 		// update the distances of all entries
 		for (int index : remaining)
 		{
-			int newDistance = graph(minIndex, index);
+			int newDistance = graph(minIndex, index)();
 			if (newDistance < t.distances[index])
 			{
 				t.distances[index] = newDistance;
@@ -104,9 +106,10 @@ Path FastTSPSolver::Solve(const Graph& graph) const {
 	}
 
 	// calculate and set the length of the path
-	for (int i = 0; i < int(salespath.vertices.size()); ++i) {
+	for (int i = 0; i < int(salespath.vertices.size()); ++i)
+	{
 		salespath.length += graph(salespath.vertices[i],
-			salespath.vertices[(i + 1) % salespath.vertices.size()]);
+			salespath.vertices[(i + 1) % salespath.vertices.size()])();
 	}
 
 	return salespath;

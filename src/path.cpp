@@ -18,7 +18,6 @@ ostream& operator<<(ostream& os, const Path& p)
 		first = false;
 		os << node;
 	}
-	os << endl;
 	return os;
 }
 
