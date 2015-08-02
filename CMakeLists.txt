@@ -11,7 +11,6 @@ set(SOURCE_DIR "${CMAKE_SOURCE_DIR}/src")
 set(GMOCK_ROOT "$ENV{HOME}/links/third_party/gmock-1.7.0")
 
 find_package(gflags REQUIRED)
-set(GFLAGS_NAMESPACE "google")
 
 if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	if (CMAKE_COMPILER_IS_GNUCC)
