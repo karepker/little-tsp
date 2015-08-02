@@ -4,7 +4,7 @@
 #include "graph/edge.hpp"
 #include "util.hpp"
 
-/** 
+/**
  * class used to store integers and their states in a cost matrix in Little's
  * TSP algorithm. An integer's availability corresponds to whether or not it has
  * been "crossed out" in the cost matrix. An integer's infinite status

@@ -10,7 +10,7 @@ struct Path;
  */
 class TSPSolver {
 public:
-	TSPSolver(bool optimal) : optimal_{true} {}
+	TSPSolver(bool optimal) : optimal_{optimal} {}
 	~TSPSolver() {}
 
 	// solve the TSP for the given graph

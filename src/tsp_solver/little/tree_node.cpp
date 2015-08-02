@@ -162,9 +162,9 @@ bool TreeNode::CalcLBAndNextEdge() {
 
 	// handle base case in a separate function
 	if (cost_matrix.GetCondensedSize() == 2)
-	{ return HandleBaseCase(cost_matrix, zeros); }
+	{ return HandleBaseCase(zeros); }
 
-	// for any other case, set the next edge as the zero with the highest 
+	// for any other case, set the next edge as the zero with the highest
 	// penalty and allow an exclude branch if the penalty is not infinite
 	assert(zeros.size() == 1);
 	next_edge_ = zeros[0].edge;
@@ -172,8 +172,7 @@ bool TreeNode::CalcLBAndNextEdge() {
 	return true;
 }
 
-bool TreeNode::HandleBaseCase(const CostMatrix& cost_matrix,
-		const vector<CostMatrixZero>& zeros) {
+bool TreeNode::HandleBaseCase(const vector<CostMatrixZero>& zeros) {
 	// find the edge with the largest penalty, remove it from zeros
 	auto max_penalty_it = max_element(zeros.begin(), zeros.end());
 	Edge edge{max_penalty_it->edge};
@@ -218,8 +217,8 @@ vector<CostMatrixZero> FindZerosAndPenalties(const CostMatrix& cost_matrix) {
 	}
 
 	// 3 cases
-	// 1. base case: 2 edges left to add. 
-	// Logic is sufficiently different that it belongs in its own function 
+	// 1. base case: 2 edges left to add.
+	// Logic is sufficiently different that it belongs in its own function
 	if (cost_matrix.GetCondensedSize() == 2) {
 		return FindBaseCaseZerosAndPenalties(
 				zero_edges, two_smallest_row, two_smallest_column);
@@ -265,7 +264,7 @@ vector<CostMatrixZero> FindBaseCaseZerosAndPenalties(
 		EdgeCost column_penalty{
 			GetPenalty(edge, two_smallest_column[edge.v])};
 
-		// We need to know if penalty is zero or infinite so we can choose the 
+		// We need to know if penalty is zero or infinite so we can choose the
 		// two edges with the highest penalties
 		if (column_penalty.IsInfinite() || row_penalty.IsInfinite())
 		{ cost_matrix_zeros.push_back(CostMatrixZero{edge, infinity}); }

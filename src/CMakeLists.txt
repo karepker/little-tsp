@@ -11,7 +11,8 @@ set(SRCS
 	tsp_solver/little/solver.cpp
 	tsp_solver/little/tree_node.cpp
 	tsp_solver/naive.cpp
-	tsp_solver/tsp_solver.cpp)
+	tsp_solver/tsp_solver.cpp
+	)
 
 set(MAIN_SRC main.cpp)
 
@@ -19,35 +20,37 @@ set(UNITTEST_SRCS
 	graph/edge_cost_test.cpp
 	graph/mock.cpp
 	tsp_solver/little/cost_matrix_test.cpp
-	tsp_solver/little/tree_node_test.cpp)
+	tsp_solver/little/tree_node_test.cpp
+	)
 
-set(DEBUG_OBJECT_LIBRARY "debug_objects")
-set(DEBUG_BINARY "littletspd")
-set(RELEASE_BINARY "littletsp")
+set(OBJECT_LIBRARY "littletsp_objects")
+set(BINARY "littletsp")
 set(UNITTEST_BINARY "unittest")
 
 include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}
 	${gflags_INCLUDE_DIR})
 
-add_library(${DEBUG_OBJECT_LIBRARY} OBJECT ${SRCS})
-add_executable(${DEBUG_BINARY}
-	${MAIN_SRC}
-	$<TARGET_OBJECTS:${DEBUG_OBJECT_LIBRARY}>)
-add_executable(${RELEASE_BINARY} ${MAIN_SRC} ${SRCS})
+# remove "unused variable" warning for the main module for gflags
+set_source_files_properties(${MAIN_SRC} PROPERTIES
+	COMPILE_FLAGS -Wno-unused-variable
+	)
 
-set_property(SOURCE ${SRCS} PROPERTY COMPILE_FLAGS "${CXXFLAGS_DEBUG}")
-set_target_properties(${DEBUG_BINARY} PROPERTIES COMPILE_FLAGS "${CXXFLAGS_DEBUG}")
-set_target_properties(${RELEASE_BINARY} PROPERTIES COMPILE_FLAGS "${CXXFLAGS_RELEASE}")
-target_link_libraries(${DEBUG_BINARY}
+add_library(${OBJECT_LIBRARY} OBJECT ${SRCS})
+add_executable(${BINARY}
+	${MAIN_SRC}
+	$<TARGET_OBJECTS:${OBJECT_LIBRARY}>
+	)
+
+target_link_libraries(${BINARY}
 	gflags
-	pthread)
-target_link_libraries(${RELEASE_BINARY}
-	gflags
-	pthread)
+	pthread
+	)
 
 # if we choose to build unit tests, add rules for building unittest executable
 if (unit_tests)
+    message(STATUS "Unit test target available.")
+
 	if (NOT EXISTS "${GMOCK_ROOT}")
 		message("'${GMOCK_ROOT}' does not exist, please set the GMOCK_ROOT
 		variable to the appropriate directory")
@@ -65,9 +68,8 @@ if (unit_tests)
 
 	add_executable(${UNITTEST_BINARY}
 		${UNITTEST_SRCS}
-		$<TARGET_OBJECTS:${DEBUG_OBJECT_LIBRARY}>)
+		$<TARGET_OBJECTS:${OBJECT_LIBRARY}>)
 
-	set_target_properties(${UNITTEST_BINARY} PROPERTIES COMPILE_FLAGS "${CXXFLAGS_DEBUG}")
 	target_link_libraries(${UNITTEST_BINARY}
 		gmock_main
 		pthread)

@@ -77,7 +77,7 @@ Path LittleTSPSolver::Solve(const Graph& graph, int upper_bound) const {
 // evaluate a node by calculating its next Edge and lower bound
 // return true if the lower bound is less than the smallest path length
 bool EvaluateNode(TreeNode& node, TreeNode& smallest, int upper_bound) {
-	// evaluate the node, add it to the list only if its 
+	// evaluate the node, add it to the list only if its
 	// lower bound is strictly less than the upper bound
 	if (node.CalcLBAndNextEdge()) { return node.GetLowerBound() < upper_bound; }
 

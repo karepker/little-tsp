@@ -17,7 +17,7 @@ class Graph;
 // because it does not actually store elements, and computes them on the fly
 // using the elements in the graph.
 
-// CostMatrix keeps track of a condensed index system built on construction, 
+// CostMatrix keeps track of a condensed index system built on construction,
 // which simplifies iteration by guaranteeing condensed indices map only to
 // available rows and columns.
 class CostMatrix {
@@ -25,7 +25,7 @@ public:
 	CostMatrix(const Graph& graph, const std::vector<Edge>& include,
 			const Matrix<int>& exclude);
 
-	// Reduces the matrix by subtracting the smallest value in each row and 
+	// Reduces the matrix by subtracting the smallest value in each row and
 	// column such that for all rows and columns there exists an element == 0.
 	// Return the total value that was deducted from the matrix.
 	int ReduceMatrix();
@@ -66,9 +66,9 @@ public:
 		// GetNumRows and GetNumColumns are equivalent for square cost matrix
 		int Size() const { return cost_matrix_ptr_->GetCondensedSize(); }
 
-		// Pseudo-iterator allows easier iteration over vector and more use of 
+		// Pseudo-iterator allows easier iteration over vector and more use of
 		// STL. Note: "pseudo" because it does not implement operator->()
-		// because CostMatrix is a pseudo-container and computes elements on 
+		// because CostMatrix is a pseudo-container and computes elements on
 		// the fly.
 		class Iterator {
 		public:
@@ -132,7 +132,7 @@ public:
 	CostVector<Row> GetRow(int row_num);
 	CostVector<Column> GetColumn(int column_num);
 
-	// Pseudo-iterator allows easier iteration over entire matrix and more use 
+	// Pseudo-iterator allows easier iteration over entire matrix and more use
 	// of STL. Note: "pseudo" because it does not implement operator->() because 
 	// CostMatrix is a pseudo-container and computes elements on the fly.
 	class Iterator {

@@ -44,13 +44,12 @@ public:
 private:
 	// Function to handle the base case when CalcLBAnNextEdge is called and
 	// there are only two edges left to add.
-	bool HandleBaseCase(const CostMatrix& cost_matrix,
-			const std::vector<CostMatrixZero>& remaining_edges);
+	bool HandleBaseCase(const std::vector<CostMatrixZero>& remaining_edges);
 
 	// Helper method to calculate the lower bound from the edges included.
 	int CalculateLowerBound() const;
 
-	// Once we add an include edge or an exclude edge, we don't know if the 
+	// Once we add an include edge or an exclude edge, we don't know if the
 	// node has an exclude branch or what the next edge will be anymore, so we
 	// reset next_edge_ and has_exclude_branch_.
 	void ResetCalculatedState();
