@@ -17,8 +17,8 @@ The implementation is given in C++. It stays relatively true to the description 
 ## Instructions to configure and run
 Dependencies:
 * [cmake](http://www.cmake.org/). Should be available in your package manager on Linux.
-* [Google Flags](https://code.google.com/p/gflags/). Available as `gflags` for Debian-based distributions, otherwise, clone the repo (instructions given in the URL), create a `build/` subdirectory, run `cmake .. && sudo make install` to install on your system.
-* (Optional) [Google Mock](https://code.google.com/p/googlemock/) (for unit testing). Downloads available on the website.
+* [gflags](https://github.com/gflags/gflags). Available as `gflags` for Debian-based distributions, otherwise, clone the repo (instructions given in the URL), create a `build/` subdirectory, run `cmake .. && sudo make install` to install on your system.
+* (Optional) [Google Test](https://github.com/google/googletest) (for unit testing). Cloning repo and modifying the `GMOCK_ROOT` variable in the base `CMakeLists.txt` file should be sufficient for CMake to find it.
 
 After cloning the repository into a local directory, `cd` into that directory and run `./configure`, then `cd` into `build/` and run `make`. To run individual cases of the program manually, run `./build/src/littletsp < input.txt` from the top level of the directory where `input.txt` is the path to a valid input file as described below.
 
