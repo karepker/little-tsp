@@ -67,7 +67,7 @@ In `src/tsp_solver/little/solver` `LittleTSPSolver` provides the top-level opera
 
 ## License
 little-tsp, an implementation of the branch and bound algorithm for the TSP as described in a 1963 paper by Little et al
-Copyright (C) 2012-2014 Kar Epker
+Copyright (C) 2012-2015 Kar Epker
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
