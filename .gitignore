@@ -1,9 +1,4 @@
 debug/
 release/
-*CMakeCXXCompilerId.cpp
-CMakeFiles
-cmake_install.cmake
-.fuse_hidden*
 *Makefile
-*__pycache__
 test/*.txt
