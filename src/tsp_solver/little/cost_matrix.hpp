@@ -12,11 +12,11 @@
 struct Edge;
 class Graph;
 
-// Pseudo-container that serves as a lens for the graph allowing handling
-// computation and iteration so TreeNode doesn't have to. "Pseudo-container"
-// because it does not actually store elements, and computes them on the fly
-// using the elements in the graph.
-
+// Pseudo-container that serves as a view for the graph handling computation and
+// iteration so TreeNode doesn't have to. "Pseudo-container" because it does not
+// actually store elements, and computes them on the fly using the elements in
+// the graph.
+//
 // CostMatrix keeps track of a condensed index system built on construction,
 // which simplifies iteration by guaranteeing condensed indices map only to
 // available rows and columns.

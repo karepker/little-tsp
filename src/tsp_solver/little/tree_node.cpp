@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <deque>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <utility>
 
@@ -18,7 +19,9 @@
 
 using namespace std::rel_ops;
 
+using std::begin;
 using std::deque;
+using std::end;
 using std::for_each;
 using std::pair;
 using std::make_pair;
@@ -104,8 +107,8 @@ void TreeNode::AddInclude(const Edge& e) {
 Path TreeNode::GetTSPPath() const {
 	// bucket sort the edges and then find the path through them
 	vector<Edge> edges{include_};
-	for_each(include_.begin(), include_.end(), [&edges](const Edge& e)
-			{ edges[e.u] = e; });
+	for_each(begin(include_), end(include_),
+			[&edges](const Edge& e) { edges[e.u] = e; });
 
 	// to help find the path
 	Path solution;
@@ -125,7 +128,7 @@ Path TreeNode::GetTSPPath() const {
 }
 
 int TreeNode::CalculateLowerBound() const {
-	return accumulate(include_.begin(), include_.end(), 0,
+	return accumulate(begin(include_), end(include_), 0,
 			[this](int current_lb, Edge e)
 			{ return current_lb + (*graph_ptr_)(e)(); });
 }
@@ -174,15 +177,15 @@ bool TreeNode::CalcLBAndNextEdge() {
 
 bool TreeNode::HandleBaseCase(const vector<CostMatrixZero>& zeros) {
 	// find the edge with the largest penalty, remove it from zeros
-	auto max_penalty_it = max_element(zeros.begin(), zeros.end());
+	auto max_penalty_it = max_element(begin(zeros), end(zeros));
 	Edge edge{max_penalty_it->edge};
 	AddInclude(edge);
 
 	// find the zero that completes the path (is not in the same row or column)
-	auto last_zero_it = find_if_not(zeros.begin(), zeros.end(),
+	auto last_zero_it = find_if_not(begin(zeros), end(zeros),
 			[&edge](const CostMatrixZero& current) {
 			return current.edge.u == edge.u || current.edge.v == edge.v; });
-	assert(last_zero_it != zeros.end());
+	assert(last_zero_it != end(zeros));
 	AddInclude(last_zero_it->edge);
 
 	// recalculate LB, i.e. the length of the TSP tour

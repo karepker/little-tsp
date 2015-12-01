@@ -60,7 +60,7 @@ int CostMatrix::ReduceMatrix() {
 	// find the row reductions
 	for (int row_num{0}; row_num < GetCondensedSize(); ++row_num) {
 		CostVector<Row> row{GetRow(GetActualRowNum(row_num))};
-		// find min element of row `row_num` 
+		// find min element of row `row_num`
 		auto min_elt_it = min_element(row.begin(), row.end());
 		assert(min_elt_it != row.end());
 		int min_elt{(*min_elt_it)()};

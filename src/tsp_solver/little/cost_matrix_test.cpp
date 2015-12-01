@@ -18,6 +18,8 @@
 #include "gtest/gtest.h"
 
 using std::back_inserter;
+using std::begin;
+using std::end;
 using std::max_element;
 using std::min_element;
 using std::numeric_limits;
@@ -137,7 +139,7 @@ TEST_F(CostMatrixTest, GetRow) {
 	CompareWithExpected(row1, {0, 2, 0});
 	CompareWithExpected(row2, {0, 2, 0});
 
-	auto row2_max_it = max_element(row2.begin(), row2.end());
+	auto row2_max_it = max_element(begin(row2), end(row2));
 	int row2_max{(*row2_max_it)()};
 	EXPECT_EQ(2, row2_max);
 }
@@ -151,7 +153,7 @@ TEST_F(CostMatrixTest, GetColumn) {
 	CompareWithExpected(column0, {0, 0});
 	CompareWithExpected(column1, {0, 0});
 
-	auto column1_max_it = max_element(column1.begin(), column1.end());
+	auto column1_max_it = max_element(begin(column1), end(column1));
 	int column1_max{(*column1_max_it)()};
 	EXPECT_EQ(0, column1_max);
 }
@@ -159,7 +161,7 @@ TEST_F(CostMatrixTest, GetColumn) {
 template <typename T>
 void CompareWithExpected(T& matrix, vector<int> expected) {
 	vector<int> actual;
-	transform(matrix.begin(), matrix.end(), back_inserter(actual),
+	transform(begin(matrix), end(matrix), back_inserter(actual),
 			[](const EdgeCost& cmi) { return cmi(); });
 	EXPECT_EQ(expected, actual);
 }
