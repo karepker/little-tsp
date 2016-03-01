@@ -47,7 +47,7 @@ if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	endif()
 
 
-	set(COMMON_FLAGS "-Wall -Wextra -Werror -pedantic-errors ${CXXSTD}")
+    set(COMMON_FLAGS "-Wall -Wextra -Werror -pedantic-errors ${CXXSTD}")
     set(CMAKE_CXX_FLAGS ${COMMON_FLAGS})
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -g -O0")
@@ -77,7 +77,7 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 		message(FATAL_ERROR "Unknown clang dialect in use!")
 	endif()
 
-	set(COMMON_FLAGS "-Wall -Wextra -Werror	-pedantic-errors ${CXXSTD}")
+    set(COMMON_FLAGS "-Wall -Wextra -Werror	-pedantic-errors ${CXXSTD}")
     set(CMAKE_CXX_FLAGS ${COMMON_FLAGS})
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -g -O0")

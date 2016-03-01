@@ -23,7 +23,7 @@ set(UNITTEST_SRCS
 	tsp_solver/little/tree_node_test.cpp
 	)
 
-set(OBJECT_LIBRARY "littletsp_objects")
+set(LITTLE_TSP_LIB "tsp_solver")
 set(BINARY "littletsp")
 set(UNITTEST_BINARY "unittest")
 
@@ -36,13 +36,13 @@ set_source_files_properties(${MAIN_SRC} PROPERTIES
 	COMPILE_FLAGS -Wno-unused-variable
 	)
 
-add_library(${OBJECT_LIBRARY} OBJECT ${SRCS})
+add_library(${LITTLE_TSP_LIB} ${SRCS})
 add_executable(${BINARY}
 	${MAIN_SRC}
-	$<TARGET_OBJECTS:${OBJECT_LIBRARY}>
 	)
 
 target_link_libraries(${BINARY}
+	${LITTLE_TSP_LIB}
 	gflags
 	pthread
 	)
@@ -68,10 +68,12 @@ if (unit_tests)
 
 	add_executable(${UNITTEST_BINARY}
 		${UNITTEST_SRCS}
-		$<TARGET_OBJECTS:${OBJECT_LIBRARY}>)
+		)
 
 	target_link_libraries(${UNITTEST_BINARY}
 		gmock_main
-		pthread)
+		pthread
+		${LITTLE_TSP_LIB}
+		)
 
 endif()
