@@ -20,7 +20,7 @@ Dependencies:
 * [gflags](https://github.com/gflags/gflags). Available as `gflags` for Debian-based distributions, otherwise, clone the repo (instructions given in the URL), create a `build/` subdirectory, run `cmake .. && sudo make install` to install on your system.
 * (Optional) [Google Test](https://github.com/google/googletest) (for unit testing). Cloning repo and modifying the `GMOCK_ROOT` variable in the base `CMakeLists.txt` file should be sufficient for CMake to find it.
 
-After cloning the repository into a local directory, `cd` into that directory and run `./configure`, then `cd` into `build/` and run `make`. To run individual cases of the program manually, run `./build/src/littletsp < input.txt` from the top level of the directory where `input.txt` is the path to a valid input file as described below.
+After cloning the repository into a local directory, `cd` into that directory and run `./configure.sh`, then `cd` into `build/` and run `make`. To run individual cases of the program manually, run `./build/src/littletsp < input.txt` from the top level of the directory where `input.txt` is the path to a valid input file as described below.
 
 This program also provides a brute force algorithm for solving the TSP that conducts a simple depth first search and returns the minimum path (provide `--solver=naive` on the command line). A heuristic-based approach is available too (`--solver=fast`). Also, typing `littletsp --help` will print a help message displaying options for running.
 
@@ -67,7 +67,7 @@ In `src/tsp_solver/little/solver` `LittleTSPSolver` provides the top-level opera
 
 ## License
 little-tsp, an implementation of the branch and bound algorithm for the TSP as described in a 1963 paper by Little et al
-Copyright (C) 2012-2015 Kar Epker
+Copyright (C) 2012-2016 Kar Epker
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
